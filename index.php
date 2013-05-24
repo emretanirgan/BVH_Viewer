@@ -180,9 +180,8 @@
 			var offset = 0;
 			var gcount = 0;
 		
-			
-			
-			
+			var jointChannels = new Array();
+			var jointIndices = new Array();
 			var theBody = new Array();
 			var legMaterial = new THREE.MeshLambertMaterial({color: 0x6666FF});
 			var movement = new Array();
@@ -218,163 +217,12 @@
 			rotationOrder[2] = tester[15].charAt(0);
 			console.log(rotationOrder[0] + rotationOrder[1] + rotationOrder[2]);
 
-			//this builds the body	
-			for(var s = 0; s < tester.length; s++)
-			{
-				//I decided to set it up to find the correct offsets by seeing what is NOT a number
-				if(isNaN(tester[s]))
-				{
-					console.log(tester[s]);
-					//keep track of brackets for parenting purposes.
-					if(tester[s] == '{')
-					{
-						oBracket++;	
-						otrack++;
-						
-					}
-					//if the word found is offset, we are given positions of the sphere
-					else if(tester[s] == 'OFFSET')
-					{
-						//placetracker
-						s++;
-
-						//make a new object of size 2. and set the positions.
-						root = new THREE.Mesh( new THREE.SphereGeometry(2,20,20), legMaterial);
-						
-						root.position.x = tester[s++] *1;
-						root.position.y = tester[s++] *1;
-						root.position.z = tester[s++] *1;
-
-						//as long as this is not the original root position (0,0,0)
-						if(loc!=0)
-						{
-								//if placeKeep is -1 the parent of this sphere is the previous position in the array
-								if(placeKeep == -1)
-								{
-									placeKeep = loc-1;
-									theBody[placeKeep].addChild(root);
-								}								
-								
-								else
-								{
-									//if it is not, it is because it is an 'end' point. 
-									//the placeKeep is set later down.
-									theBody[placeKeep].parent.addChild(root);
-								}
-								
-							
-							
-						}
-						
-						//default placeKeep to -1 and add the object to the array.
-						placeKeep = -1;
-						theBody.push(root);
-						loc++;
-					
-						
-					}
-					
-					//find out where the to be added in the tree if it is an end position.
-					else if(tester[s] == 'End')
-					{
-						//make sure that we get only numbers.
-						while(isNaN(tester[s]))
-						{
-							s++;
-						}
-						
-						//keep track of brackets
-						oBracket++;
-						otrack++;
-						
-						//make new sphere object and sets position.
-						root = new THREE.Mesh( new THREE.SphereGeometry(2,20,20), legMaterial);
-						root.position.x = tester[s++] *1;
-						root.position.y = tester[s++] *1;
-						root.position.z = tester[s++] *1;
-						
-						//if the placeKeep is -1, then the previous sphere added is the parent.
-						if(placeKeep == -1)
-						{
-							placeKeep = loc-1;
-							theBody[placeKeep].addChild(root);
-						}
-						else{
-							theBody[placeKeep].parent.addChild(root);
-						}
-						
-						//add to the array.
-						theBody.push(root);		
-						loc++;
-		
-						//next we are finding out where the parent of the next sphere will be placed.
-						if(tester[s] == 'CHANNELS')
-						{
-							s+=5;
-						}
-						else{
-							//if it is an end position, there is no rotation, so i keep track of this position in the array.
-							noMovement[ender] = loc-1;
-							ender++;
-						}
-						//keep track of closing brackets
-						while( tester[s] == '}')
-						{
-							cBracket++;
-							track++;
-							s++;
-	
-						}
-					
-						//here is where the parents location is computed
-						 if(oBracket > cBracket)
-						 {
-							 //if the closing brackets are equal to the opening brackets in each branch.
-							 //then the parent is the total number of open brackets minus the current closing brackets
-							 if(otrack == track)
-							 {
-								placeKeep = oBracket - track;
-								track = 0;
-								otrack = 0;
-
-							 }
-							 else
-							 {
- 								//if not then we have a few choices.
-								//we are keeping tracking of the placekeep. 
-								//this is for special cases such as where the right shoulder would go. 
-								// when we also have to parent the left wrist end to something.
-								 placeKeep = loc - track;
-								 
-									 if(BodyHolder == 0)
-									 {
-										BodyHolder = placeKeep;
-										track = 0;
-										otrack =0;
-									
-									 }
-									 else if(theBody[BodyHolder].parent != theBody[placeKeep].parent)
-									 {
-										 placeKeep = placeKeep;
-									 }	 
-								}
-								 
-							 }
-							
-						 }
-						
-						//this keeps track of where the actual movements will start in the array.
-						else if(tester[s] == 'Frames:')
-							{
-								frameCount = tester[s+1];	
-								movementStart= s+5;
-								s = tester.length;
-							}
-							
-					
-					}
-				
-			}
+			parseJoint(1);
+			frameCount = tester[movementStart+1];
+			//frame time?	
+			movementStart += 5;
+			s = tester.length;
+			
 			//puts the movements into a seperate array.
 			for(var j = movementStart; j < tester.length; j++)
 			{
@@ -383,7 +231,55 @@
 			}
 			
 			
-			
+			function parseJoint(startIndex){
+				jointIndices.push(startIndex);
+				var i = startIndex+1;
+				//console.log(tester[i]+ ' outside');
+				while(tester[i] != 'JOINT' && tester[i] != 'End'){
+					//console.log(tester[i]);
+					if(tester[i] == '{'){
+						oBracket++;
+					}
+					else if(tester[i] == '}'){
+						cBracket++;
+					}
+					else if(tester[i] == 'OFFSET'){
+						 //pass OFFSET
+
+						joint = new THREE.Mesh(new THREE.SphereGeometry(2,20,20), legMaterial);
+
+						joint.position.x = tester[i+1];
+						joint.position.y = tester[i+2];
+						joint.position.z = tester[i+3];
+
+						theBody.push(joint);
+
+					}
+					else if(tester[i] == 'CHANNELS'){
+						
+						jointChannels.push(tester[i+1]); 
+
+					}
+					else if(tester[i] == 'MOTION'){
+						movementStart = i+1;
+						return;
+					}
+
+					//If the joint isn't root
+					if(jointIndices.length > 2){
+						console.log(jointIndices);
+						console.log(oBracket);
+						console.log(cBracket);
+						//theBody[oBracket-(cBracket+1)].addChild(joint);
+						theBody[0].addChild(joint);
+					}
+					i++;
+				}
+				//return;
+				//console.log(tester[i]);
+				parseJoint(i);
+				return;
+			}
 			
 			
 			
