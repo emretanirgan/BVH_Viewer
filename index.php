@@ -6,17 +6,19 @@
 		<meta charset="utf-8"> 
 		<style type="text/css"> 
 			body {
-				background-color: #000000;
+				background-color: #F8F8F8 ;
 				margin: 0px;
+				text-align: center;
 				overflow: hidden;	
-				color: white;			
+				color: #404040 ;			
 			}
 			a:hover{
 				text-decoration: underline;
 			}
 			#container{
-				background-color: #000000;
-				margin: 0 auto;
+				overflow: hidden;
+				background-color: #282828 ;
+				margin: 0px auto;
 				width:800px;
 				height: 600px; 
 				text-align: center;
@@ -24,19 +26,12 @@
 				
 			}
 			#container2{
-				background-color: #000000;
 				margin: 0 auto;
+				text-align: center;
 				width:800px;
 				height: 600px; 
 				/*float:right; */
 				
-			}
-
-			#tracetoggle{
-				float: left;
-			}
-			p{
-				float: left;
 			}
 
 		</style> 
@@ -53,16 +48,17 @@
   	$hmm =  preg_split("/[_\s]+/", $variable1);
 	
 	?> 
- 
+ 		<h1>WebGL BVH Viewer</h1>
 		<div id="container">
-			<h1>WebGL BVH Viewer</h1>
 		</div> 
         <div id="container2">
         	<p> To rotate the camera, hold ALT and click and drag on the canvas. 
         	To pan the camera, hold ALT and click and drag using the middle mouse button. 
         	To zoom in and out, hold ALT and click and drag using the right mouse button.
         	</p>
-        	<button id="tracetoggle" onclick='toggleTrace()'>Toggle Ghost</button>
+        	<button onclick='toggleTrace()'>Toggle Ghost</button>
+        	<button onclick='pauseAnim()'>Pause/Play Animation</button>
+        	<button onclick='replayAnim()'>Replay Animation</button>
         	Set Up Vector:
         	<button  onclick='setUpVector(1,0,0)'>X</button>
         	<button  onclick='setUpVector(0,1,0)'>Y</button>
@@ -86,20 +82,18 @@
 		<link href="simple-slider.css" rel="stylesheet" type="text/css" />
 
 		<script type="text/javascript"> 
- 
- 			
-			
 			
 			
 			//variables
 			var traceOn = true;
+			var paused = false;
 			var apps = [];
 			var camera, scene = -1;
+			var gcount = 0;
 			var ghostArray = new Array();
 			//calls init and animate functions.
 			//function start
 			init();
-			animate();
 		
 			
 			function toggleTrace(){
@@ -118,7 +112,7 @@
 				
  
 			}
- 			document.getElementById("scaleSlider").bind("slider:changed", function (event, data) {
+ 			/*document.getElementById("scaleSlider").bind("slider:changed", function (event, data) {
 			  console.log("here");
 			  // The currently selected value of the slider
 			  //alert(data.value);
@@ -127,8 +121,8 @@
 			  //alert(data.ratio);
 			  console.log(data.ratio);
 			  scaleWorld(data.ratio, data.ratio, data.ratio);
-			});
-			$("#scaleSlider").bind("slider:changed", function (event, data) {
+			});*/
+			/*$("#scaleSlider").bind("slider:changed", function (event, data) {
 			  console.log("here");
 			  // The currently selected value of the slider
 			  //alert(data.value);
@@ -137,22 +131,9 @@
 			  //alert(data.ratio);
 			  console.log(data.ratio);
 			  scaleWorld(data.ratio, data.ratio, data.ratio);
-			});
+			});*/
 			
- 		
 
-			function animate() {
- 
-				for ( var i = 0; i < apps.length; ++i ) {
- 
-					apps[ i ].animate();
- 
-				}
- 
-				requestAnimationFrame( animate );
- 
-			}
-			
 			function setUpVector(x,y,z){
 				//if camera is -1, it hasn't been created yet
 				if(camera != -1){
@@ -160,10 +141,24 @@
 				}
 			}
 
+			function pauseAnim(){
+				paused = !paused;
+			}
+
+			function replayAnim(){
+				if(scene != -1){
+					/*for(var i=scene.objects.length - 1; i >= 0; i--){
+						obj = scene.objects[i];
+						if(obj !== camera){
+							scene.removeObject(obj);
+						}
+					}*/
+					apps[0].initialize();
+				}
+			}
 			function scaleWorld(x,y,z){
 
 				if(scene != -1){
-					console.log("here");
 					scene.objects[0].scale = scene.objects[0].scale.multiplyScalar(x);
 					for(var i=0; i<ghostArray.length; i++){
 						ghostArray[i][0].scale = ghostArray[i][0].scale.multiplyScalar(x);
@@ -178,7 +173,7 @@
 			var theWorldBody = new Array();
 			var ghostLegMaterial = new THREE.MeshLambertMaterial({color: 0x6666FF, opacity:0.5});
 			var offset = 0;
-			var gcount = 0;
+			
 		
 			var jointChannels = new Array();
 			var jointIndices = new Array();
@@ -217,7 +212,7 @@
 			rotationOrder[2] = tester[15].charAt(0);
 			console.log(rotationOrder[0] + rotationOrder[1] + rotationOrder[2]);
 
-			parseJoint(1);
+			parseJoint(1, null);
 			frameCount = tester[movementStart+1];
 			//frame time?	
 			movementStart += 5;
@@ -230,63 +225,68 @@
 					k++;
 			}
 			
-			
-			function parseJoint(startIndex){
+			function findJoint (joint){
+				for(var i = 0; i<theBody.length; i++){
+					if(joint.id == theBody[i].id){
+						return theBody[i];
+					}
+				}
+			}
+			function parseJoint(startIndex, parent){
 				jointIndices.push(startIndex);
+				var joint = new THREE.Mesh(new THREE.SphereGeometry(2,20,20), legMaterial);
+				theBody.push(joint);
+				loc++;
 				var i = startIndex+1;
-				//console.log(tester[i]+ ' outside');
-				while(tester[i] != 'JOINT' && tester[i] != 'End'){
-					//console.log(tester[i]);
+				for(i; i < tester.length; i++){
+					if(parent == null){
+						console.log(tester[i]);
+					}
 					if(tester[i] == '{'){
 						oBracket++;
 					}
 					else if(tester[i] == '}'){
 						cBracket++;
+						if(startIndex != 1){
+							return i-startIndex;
+						}
 					}
 					else if(tester[i] == 'OFFSET'){
-						 //pass OFFSET
+						joint.position.x = tester[i+1]*1;
+						joint.position.y = tester[i+2]*1;
+						joint.position.z = tester[i+3]*1;
 
-						joint = new THREE.Mesh(new THREE.SphereGeometry(2,20,20), legMaterial);
-
-						joint.position.x = tester[i+1];
-						joint.position.y = tester[i+2];
-						joint.position.z = tester[i+3];
-
-						theBody.push(joint);
-
+						if(parent != null){
+							var bodyParent = findJoint(parent);
+							parent.addChild(joint);
+						}
+						
 					}
 					else if(tester[i] == 'CHANNELS'){
 						
 						jointChannels.push(tester[i+1]); 
-
+					}
+					else if(tester[i] == 'JOINT'){
+						i += parseJoint(i, joint);
+					}
+					else if(tester[i] == 'End'){
+						noMovement[ender] = loc - 1;
+						ender++;
+						i += parseJoint(i, joint);
 					}
 					else if(tester[i] == 'MOTION'){
 						movementStart = i+1;
 						return;
 					}
-
-					//If the joint isn't root
-					if(jointIndices.length > 2){
-						console.log(jointIndices);
-						console.log(oBracket);
-						console.log(cBracket);
-						//theBody[oBracket-(cBracket+1)].addChild(joint);
-						theBody[0].addChild(joint);
-					}
-					i++;
 				}
-				//return;
-				//console.log(tester[i]);
-				parseJoint(i);
-				return;
 			}
 			
 			
 			
- 			init();
+ 			initialize();
 			animate();
  			//sets up the scene.
-			function init() {
+			function initialize() {
  
  				//here we are setting a container to put the webgl scene in. You initalize paramters in 
 				//css at the top and then place the scene into that container here.
@@ -342,6 +342,7 @@
 								
 				//since we are only given the positions of the spheres, this method will draw the limbs to connect them.					
 				drawLimbs(theBody, 0, false);	
+				//drawAllLimbs(theBody[0]);	
 					
                 //Draw the bottom grid
                 var geometry = new THREE.Geometry();
@@ -370,12 +371,8 @@
 				 
 				 
 				  stats = new Stats();
-				  stats2 = new Stats();
  				  stats.domElement.style.position = 'absolute';
  				  stats.domElement.style.top = '0px';
-				  stats2.domElement.style.position = 'absolute';
- 				  stats2.domElement.style.top = '0px';
-				  
 				  
  				  container.appendChild( stats.domElement );
 				  
@@ -498,11 +495,195 @@
 		
 		
 		
-		
-		
+			
+			/*function drawAllLimbs(parent){
+				var theLimb;
+				var sphereMaterial = new THREE.MeshLambertMaterial({color: 0xCC0000});
+				for(var r = 0; r < theWorldBody.length; r++){
+					if(theBody[i].parent == theBody[r])
+					{
+
+						placer = r;
+						other = i;
+						//exit the loop
+						r = theWorldBody.length;
+						
+				     }
+				 }
+	
+				
+				for(var i = 0; i<parent.children.length; i++){
+					var child = parent.children[i];
+					//keep track of lengths.		
+					var v1 = new THREE.Vector3(parent.position.x, parent.position.y, parent.position.z);
+					var v2 = new THREE.Vector3(child.position.x, child.position.y, child.position.z);
+					var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
+					var v4 = new THREE.Vector3(0, 0, 1); //the axis vector
+						
+					//placementX = placementArray[child].position.x;
+					//placementY = placementArray[child].position.y;
+					//placementZ = placementArray[child].position.z;	
+					
+					//new cylinder object
+					var boneThickness = 1.5;
+		   			theLimb = new THREE.Mesh( new THREE.CylinderGeometry( 30, boneThickness, boneThickness, v3.length() -2 , 1, 1), sphereMaterial );
+					
+					//keeps track of where to place the limb.
+					//placementX /= 2;
+					//placementY /= 2;
+					//placementZ /= 2;	
+				
+					//calculations with quaternions for rotation
+					v4.normalize();
+					v3.normalize();
+					var crossVecs = new THREE.Vector3();
+					crossVecs.cross(v4,v3);
+					crossVecs.normalize();
+
+					var dotVecs = Math.acos(v3.dot(v4)/(v3.length()*v4.length()));
+
+					q1 = new THREE.Quaternion();
+					q1.setFromAxisAngle(crossVecs, dotVecs);
+					q1.normalize();
+
+					//if(distance !=0)
+					//{
+				
+						//theLimb.useQuaternion = true;
+						//theLimb.quaternion = q1;
+
+					//}
+					//sets the position and adds the object to the parent
+					//theLimb.position.x = placementX;
+					//theLimb.position.y = placementY;
+					//theLimb.position.z = placementZ;
+					
+					
+					if(double){
+						theArray[num][placer].addChild(theLimb);
+					}
+					else{
+						theArray[placer].addChild(theLimb);
+					}
+					
+					drawAllLimbs(child);
+				}
+			}*/
 		
 	
 			//function to draw the limbs.
+			//num is only used for the ghost array.
+			//double determines whether this is a doubleArray
+			function drawLimbsNew(theArray, num, double)
+			{
+				var joint1, joint2, tempX, tempY, tempZ, theLimb, rotX, rotY, rotZ, distance;
+				//distance = 0;
+				var sphereMaterial = new THREE.MeshLambertMaterial({color: 0xCC0000});
+				if(double){
+					sphereMaterial.opacity = 0.5;
+				}
+				var placementX, placementY,placementZ;
+				var placementArray= new Array();
+					
+				//clones the array so its passed by value, not by reference
+				for(var world = 0; world < theBody.length; world++)
+				{
+					theWorldBody[world] = (new THREE.Vertex((theBody[world].position.clone())));
+					placementArray[world] = (new THREE.Vertex((theBody[world].position.clone())));
+				}
+
+
+
+				//add the current local position to it's 
+				//parent's world position
+				for(var world2 = 1; world2 < theWorldBody.length; world2++){
+					for(var r = 0; r < theWorldBody.length; r++)
+					{
+						if(theBody[world2].parent == theBody[r])
+						{
+							theWorldBody[world2].position.x += (theWorldBody[r].position.x);
+							theWorldBody[world2].position.y += (theWorldBody[r].position.y);
+							theWorldBody[world2].position.z += (theWorldBody[r].position.z);
+							//if we find it then we can exit the loop.
+							r = theWorldBody.length;
+						}
+					}
+				}
+	
+					
+				//here is where the calculations are done to find the correct position, length, and rotation of the cylinder limb.
+				var placer, other= -1;
+				for(var i=1; i<theWorldBody.length; i++){
+					for(var r = 0; r < theWorldBody.length; r++){
+						if(theBody[i].parent == theBody[r])
+						{
+
+							placer = r;
+							other = i;
+							//exit the loop
+							r = theWorldBody.length;
+							
+					     }
+					}
+					
+				
+					if(placer == -1 || other == -1){
+						return;
+					}
+		   			//keep track of lengths.		
+					var v1 = new THREE.Vector3(theWorldBody[placer].position.x, theWorldBody[placer].position.y, theWorldBody[placer].position.z);
+					var v2 = new THREE.Vector3(theWorldBody[other].position.x, theWorldBody[other].position.y, theWorldBody[other].position.z);
+					var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
+					var v4 = new THREE.Vector3(0, 0, 1); //the axis vector
+						
+					placementX = placementArray[other].position.x;
+					placementY = placementArray[other].position.y;
+					placementZ = placementArray[other].position.z;	
+					
+					//new cylinder object
+					var boneThickness = 1.5;
+		   			theLimb = new THREE.Mesh( new THREE.CylinderGeometry( 30, boneThickness, boneThickness, v3.length() -2 , 1, 1), sphereMaterial );
+					
+					//keeps track of where to place the limb.
+					placementX /= 2;
+					placementY /= 2;
+					placementZ /= 2;	
+				
+					//calculations with quaternions for rotation
+					v4.normalize();
+					v3.normalize();
+					var crossVecs = new THREE.Vector3();
+					crossVecs.cross(v4,v3);
+					crossVecs.normalize();
+
+					var dotVecs = Math.acos(v3.dot(v4)/(v3.length()*v4.length()));
+
+					q1 = new THREE.Quaternion();
+					q1.setFromAxisAngle(crossVecs, dotVecs);
+					q1.normalize();
+
+					if(distance !=0)
+					{
+						theLimb.useQuaternion = true;
+						theLimb.quaternion = q1;
+
+					}
+
+					//sets the position and adds the object to the parent
+					theLimb.position.x = placementX;
+					theLimb.position.y = placementY;
+					theLimb.position.z = placementZ;
+					
+					if(double){
+						theArray[num][placer].addChild(theLimb);
+					}
+					else{
+						theArray[placer].addChild(theLimb);
+					}
+				}			
+			}
+
+						//function to draw the limbs.
 			//num is only used for the ghost array.
 			//double determines whether this is a doubleArray
 			function drawLimbs(theArray, num, double)
@@ -569,80 +750,77 @@
 					else
 					{	
 						//if not we have to find teh parent's position.
-						for(var r = 0; r < theWorldBody.length; r++)
+						for(var r = 0; r < theWorldBody.length; r++){
+								if(theBody[i].parent == theBody[r])
 								{
-									if(theBody[i].parent == theBody[r])
-									{
 
-										placer = r;
-										other = i;
-										//exit the loop
-										r = theWorldBody.length;
-										
-								     }
-							    }
-	
+									placer = r;
+									other = i;
+									//exit the loop
+									r = theWorldBody.length;
+									
+							     }
 						}
-				   			
-				   			//keep track of lengths.		
-							var v1 = new THREE.Vector3(theWorldBody[placer].position.x, theWorldBody[placer].position.y, theWorldBody[placer].position.z);
-							var v2 = new THREE.Vector3(theWorldBody[other].position.x, theWorldBody[other].position.y, theWorldBody[other].position.z);
-							var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
-							var v4 = new THREE.Vector3(0, 0, 1); //the axis vector
-								
-							placementX = placementArray[other].position.x;
-							placementY = placementArray[other].position.y;
-							placementZ = placementArray[other].position.z;	
-							
-							//new cylinder object
-							var boneThickness = 1.5;
-				   			theLimb = new THREE.Mesh( new THREE.CylinderGeometry( 30, boneThickness, boneThickness, v3.length() -2 , 1, 1), sphereMaterial );
-							
-							//keeps track of where to place the limb.
-							placementX /= 2;
-							placementY /= 2;
-							placementZ /= 2;	
-						
-							//calculations with quaternions for rotation
-							v4.normalize();
-							v3.normalize();
-							var crossVecs = new THREE.Vector3();
-							crossVecs.cross(v4,v3);
-							crossVecs.normalize();
-
-							var dotVecs = Math.acos(v3.dot(v4)/(v3.length()*v4.length()));
-
-							q1 = new THREE.Quaternion();
-							q1.setFromAxisAngle(crossVecs, dotVecs);
-							q1.normalize();
 	
-							if(distance !=0)
-							{
+					}
+				   			
+		   			//keep track of lengths.		
+					var v1 = new THREE.Vector3(theWorldBody[placer].position.x, theWorldBody[placer].position.y, theWorldBody[placer].position.z);
+					var v2 = new THREE.Vector3(theWorldBody[other].position.x, theWorldBody[other].position.y, theWorldBody[other].position.z);
+					var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
+					var v4 = new THREE.Vector3(0, 0, 1); //the axis vector
 						
-								theLimb.useQuaternion = true;
-								theLimb.quaternion = q1;
+					placementX = placementArray[other].position.x;
+					placementY = placementArray[other].position.y;
+					placementZ = placementArray[other].position.z;	
+					
+					//new cylinder object
+					var boneThickness = 1.5;
+		   			theLimb = new THREE.Mesh( new THREE.CylinderGeometry( 30, boneThickness, boneThickness, v3.length() -2 , 1, 1), sphereMaterial );
+					
+					//keeps track of where to place the limb.
+					placementX /= 2;
+					placementY /= 2;
+					placementZ /= 2;	
+				
+					//calculations with quaternions for rotation
+					v4.normalize();
+					v3.normalize();
+					var crossVecs = new THREE.Vector3();
+					crossVecs.cross(v4,v3);
+					crossVecs.normalize();
 
-							}
-							//sets the position and adds the object to the parent
-							theLimb.position.x = placementX;
-							theLimb.position.y = placementY;
-							theLimb.position.z = placementZ;
-							
-							if(double){
-								theArray[num][placer].addChild(theLimb);
-							}
-							else{
-								theArray[placer].addChild(theLimb);
-							}
-							
+					var dotVecs = Math.acos(v3.dot(v4)/(v3.length()*v4.length()));
+
+					q1 = new THREE.Quaternion();
+					q1.setFromAxisAngle(crossVecs, dotVecs);
+					q1.normalize();
+
+					if(distance !=0)
+					{
+				
+						theLimb.useQuaternion = true;
+						theLimb.quaternion = q1;
+
+					}
+					//sets the position and adds the object to the parent
+					theLimb.position.x = placementX;
+					theLimb.position.y = placementY;
+					theLimb.position.z = placementZ;
+					
+					if(double){
+						theArray[num][placer].addChild(theLimb);
+					}
+					else{
+						theArray[placer].addChild(theLimb);
+					}
+						
 							
 
 				}
 			
 					
 			}
-
-			
 			//this is so we know how many numbers there will be for each frame.
 			var tracker = ((theBody.length-noMovement.length) *3) + 6;
 			gcount = 0;
@@ -651,108 +829,117 @@
 			
 			//handles the animation
 			function animate() {
- 
+ 				
 				requestAnimationFrame( animate );
 				
-				//frame count is found in the file that we read in.
-				if(k < frameCount){
-					
-					
-					for(var joint = 0; joint < theBody.length; joint++)
-					{
+				if(!paused){
+					//frame count is found in the file that we read in.
+					if(k < frameCount){
 						
-
-						for(var theEnd = 0; theEnd < noMovement.length; theEnd++)
+						
+						for(var joint = 0; joint < theBody.length; joint++)
 						{
-							//if it is an end joint it does not rotate, so we skip it.
-							if(joint == noMovement[theEnd])
+							
+
+							for(var theEnd = 0; theEnd < noMovement.length; theEnd++)
 							{
-								joint++;
+								//if it is an end joint it does not rotate, so we skip it.
+								if(joint == noMovement[theEnd])
+								{
+									joint++;
+								}
 							}
-						}
-						
-						if (joint >= theBody.length){
-								break;
-						}
+							
+							if (joint >= theBody.length){
+									break;
+							}
 
-						//if it is the root it has rotations and positions. we handle this seperately.
-						if(joint == 0)
-						{
-						
-							theBody[joint].position.x = movement[offset++];
-							theBody[joint].position.z = -movement[offset++];
-							theBody[joint].position.y = movement[offset++];
 							
-							for(var i = 0; i < 3; i++){
-								if(rotationOrder[i] === "X"){
-									theBody[joint].rotation.x = Math.PI/180 * movement[offset++] + Math.PI /180 * -90;
+							//if it is the root it has rotations and positions. we handle this seperately.
+							if(joint == 0)
+							{
+							
+								theBody[joint].position.x = movement[offset++];
+								theBody[joint].position.z = -movement[offset++];
+								theBody[joint].position.y = movement[offset++];
+								
+								for(var i = 0; i < 3; i++){
+									if(rotationOrder[i] === "X"){
+										theBody[joint].rotation.x = Math.PI/180 * movement[offset++] + Math.PI /180 * -90;
+									}
+									else if(rotationOrder[i] === "Y"){
+										theBody[joint].rotation.y = Math.PI/180 * movement[offset++] ;
+									}
+									else if(rotationOrder[i] === "Z"){
+										theBody[joint].rotation.z = Math.PI/180 * movement[offset++];
+									}
 								}
-								else if(rotationOrder[i] === "Y"){
-									theBody[joint].rotation.y = Math.PI/180 * movement[offset++] ;
+								
+								
+								
+							}
+					
+							//if it's not the root it has three rotations like everything else.
+							else
+							{	
+								if (jointChannels[joint] == 6){
+									theBody[joint].position.x = movement[offset++];
+									theBody[joint].position.z = -movement[offset++];
+									theBody[joint].position.y = movement[offset++];
 								}
-								else if(rotationOrder[i] === "Z"){
-									theBody[joint].rotation.z = Math.PI/180 * movement[offset++];
+
+								for(var i = 0; i < 3; i++){
+									if(rotationOrder[i] === "X"){
+										theBody[joint].rotation.x = movement[offset++] * Math.PI/180;
+									}
+									else if(rotationOrder[i] === "Y"){
+										theBody[joint].rotation.y = movement[offset++] * Math.PI/180;
+									}
+									else if(rotationOrder[i] === "Z"){
+										theBody[joint].rotation.z = movement[offset++] * Math.PI/180;
+									}
 								}
+								
+								
+								
 							}
 							
-							
-							
 						}
-				
-						//if it's not the root it has three rotations like everything else.
-						else
-						{	
-							for(var i = 0; i < 3; i++){
-								if(rotationOrder[i] === "X"){
-									theBody[joint].rotation.x = movement[offset++] * Math.PI/180;
+						//calls render function
+						if(traceOn){
+							if(k % 100 == 0 && k > 99)
+							{	
+								for(var i = 0; i <= gcount; i++){
+									scene.addObject(ghostArray[i][0]);
 								}
-								else if(rotationOrder[i] === "Y"){
-									theBody[joint].rotation.y = movement[offset++] * Math.PI/180;
-								}
-								else if(rotationOrder[i] === "Z"){
-									theBody[joint].rotation.z = movement[offset++] * Math.PI/180;
-								}
+								gcount++;
 							}
-							
-							
-							
 						}
+						else {
+							for (var i=0; i < gcount; i++){
+								scene.removeObject(ghostArray[i][0]);
+							}
+						}
+							
+						render();	
+						k++;
+					
 						
 					}
-					//calls render function
-					if(traceOn){
-						if(k % 100 == 0 && k > 99)
-						{	
-							for(var i = 0; i <= gcount; i++){
+					//if the animation is done, and we ran out of frames. render it as it ended.
+					else { 
+						if(traceOn){
+							for(var i = 0; i < gcount; i++){
 								scene.addObject(ghostArray[i][0]);
 							}
-							gcount++;
 						}
-					}
-					else {
-						for (var i=0; i < gcount; i++){
-							scene.removeObject(ghostArray[i][0]);
+						else {
+							for (var i=0; i < gcount; i++){
+								scene.removeObject(ghostArray[i][0]);
+							}
 						}
+						render();
 					}
-						
-					render();	
-					k++;
-				
-					
-				}
-				//if the animation is done, and we ran out of frames. render it as it ended.
-				else { 
-					if(traceOn){
-						for(var i = 0; i < gcount; i++){
-							scene.addObject(ghostArray[i][0]);
-						}
-					}
-					else {
-						for (var i=0; i < gcount; i++){
-							scene.removeObject(ghostArray[i][0]);
-						}
-					}
-					render();
 				}
 			}
  		
@@ -765,9 +952,8 @@
 			//render function
 			function render() 
 			{
-			
-				renderer.render(scene, camera);
-				stats.update();
+					renderer.render(scene, camera);
+					stats.update();
 			}
 		}
 		</script> 
