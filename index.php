@@ -45,7 +45,7 @@
 	//$dafile = "C:\\wamp\\www\\BVH_View\\HopScotch.bvh";
 	$variable1 = file_get_contents($dafile); 
 
-  	$hmm =  preg_split("/[_\s]+/", $variable1);
+  	$hmm =  preg_split("/[\s]+/", $variable1);
 	
 	?> 
  		<h1>WebGL BVH Viewer</h1>
@@ -233,14 +233,20 @@
 				}
 			}
 			function parseJoint(startIndex, parent){
+				//console.log(tester[startIndex]);
+				//console.log(tester[startIndex+1]);
 				jointIndices.push(startIndex);
 				var joint = new THREE.Mesh(new THREE.SphereGeometry(2,20,20), legMaterial);
 				theBody.push(joint);
 				loc++;
 				var i = startIndex+1;
 				for(i; i < tester.length; i++){
+					console.log(tester[i]);
+					if(tester[i] == 'RightShoulder'){
+						console.log("here");
+					}
 					if(parent == null){
-						console.log(tester[i]);
+						//console.log(tester[i]);
 					}
 					if(tester[i] == '{'){
 						oBracket++;
