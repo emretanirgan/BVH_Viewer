@@ -62,6 +62,7 @@
 				background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ebe8eb), color-stop(1, #ededed) );
 				background:-moz-linear-gradient( center top, #ebe8eb 5%, #ededed 100% );
 				filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ebe8eb', endColorstr='#ededed');
+				color:#404040;
 				background-color:#ebe8eb;
 			}.customButton:active {
 				position:relative;
