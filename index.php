@@ -2,15 +2,23 @@
 <!DOCTYPE HTML> 
 <html lang="en"> 
 	<head> 
+
 		<title>WebGL BVH Player</title> 
 		<meta charset="utf-8"> 
 		<style type="text/css"> 
+			html{
+				font-family: Times, serif;
+			}
 			body {
+				
 				background-color: #F8F8F8 ;
 				margin: 0px;
 				text-align: center;
 				overflow: hidden;	
 				color: #404040 ;			
+			}
+			p {
+				font-size: 1.2em;
 			}
 			a:hover{
 				text-decoration: underline;
@@ -30,8 +38,34 @@
 				text-align: center;
 				width:800px;
 				height: 600px; 
-				/*float:right; */
-				
+			}
+			.customButton {
+				-moz-box-shadow:inset 0px 0px 0px -14px #ffffff;
+				-webkit-box-shadow:inset 0px 0px 0px -14px #ffffff;
+				box-shadow:inset 0px 0px 0px -14px #ffffff;
+				background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ededed), color-stop(1, #ebe8eb) );
+				background:-moz-linear-gradient( center top, #ededed 5%, #ebe8eb 100% );
+				filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ededed', endColorstr='#ebe8eb');
+				background-color:#ededed;
+				-moz-border-radius:5px;
+				-webkit-border-radius:5px;
+				border-radius:5px;
+				border:1px solid #d6d6d6;
+				display:inline-block;
+				color:#807e80;
+				/*font-family:times;*/
+				font-size:0.8em;
+				font-weight:bold;
+				padding:3px 5px;
+				text-decoration:none;
+			}.customButton:hover {
+				background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ebe8eb), color-stop(1, #ededed) );
+				background:-moz-linear-gradient( center top, #ebe8eb 5%, #ededed 100% );
+				filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ebe8eb', endColorstr='#ededed');
+				background-color:#ebe8eb;
+			}.customButton:active {
+				position:relative;
+				top:1px;
 			}
 
 		</style> 
@@ -56,19 +90,22 @@
         	To pan the camera, hold ALT and click and drag using the middle mouse button. 
         	To zoom in and out, hold ALT and click and drag using the right mouse button.
         	</p>
-        	<button onclick='toggleTrace()'>Toggle Ghost</button>
-        	<button onclick='pauseAnim()'>Pause/Play Animation</button>
-        	<button onclick='replayAnim()'>Replay Animation</button>
-        	Set Up Vector:
-        	<button  onclick='setUpVector(1,0,0)'>X</button>
-        	<button  onclick='setUpVector(0,1,0)'>Y</button>
-        	<button  onclick='setUpVector(0,0,1)'>Z</button>
-        	<button  onclick='setUpVector(-1,0,0)'>-X</button>
-        	<button  onclick='setUpVector(0,-1,0)'>-Y</button>
-        	<button  onclick='setUpVector(0,0,-1)'>-Z</button>
-        	<button  onclick='scaleBones(2.0,2.0,2.0)'>Scale Bones Up</button>
-        	<button  onclick='scaleWorld(1.3,1.3,1.3)'>Scale Up</button>
-        	<button  onclick='scaleWorld(0.7,0.7,0.7)'>Scale Down</button>
+        	<button class="customButton" onclick='toggleTrace()'>Toggle Ghost</button>
+        	<button class="customButton" onclick='pauseAnim()'>Pause/Play Animation</button>
+        	<button class="customButton" onclick='replayAnim()'>Replay Animation</button>
+        	<p>
+	        	Set Up Vector:
+	        	<button  class="customButton" onclick='setUpVector(1,0,0)'>X</button>
+	        	<button  class="customButton" onclick='setUpVector(0,1,0)'>Y</button>
+	        	<button  class="customButton" onclick='setUpVector(0,0,1)'>Z</button>
+	        	<button  class="customButton" onclick='setUpVector(-1,0,0)'>-X</button>
+	        	<button  class="customButton" onclick='setUpVector(0,-1,0)'>-Y</button>
+	        	<button  class="customButton" onclick='setUpVector(0,0,-1)'>-Z</button>
+	        </p>
+        	<button  class="customButton" onclick='scaleBones(1.4,1.4,1.4)'>Scale Bones Up</button>
+        	<button  class="customButton" onclick='scaleBones(0.8,0.8,0.8)'>Scale Bones Down</button>
+        	<button  class="customButton" onclick='scaleWorld(1.3,1.3,1.3)'>Scale Up</button>
+        	<button  class="customButton" onclick='scaleWorld(0.7,0.7,0.7)'>Scale Down</button>
         	<!--<input id="scaleSlider" type="text" data-slider="true">Scale</input>-->
         </div> 
         
@@ -102,7 +139,7 @@
 			var theWorldBody = new Array();
 			var ghostLegMaterial = new THREE.MeshLambertMaterial({color: 0x6666FF, opacity:0.5});
 			var offset = 0;
-			
+			var tracker = 0;
 		
 			var jointChannels = new Array();
 			var jointIndices = new Array();
@@ -111,6 +148,7 @@
 
  			var tester = new Array();
 			
+			var fps = 60;
 			var ender = 0;
 			var movementStart = 0;
 			var loc = 0;
@@ -184,6 +222,7 @@
 							scene.removeObject(obj);
 						}
 					}*/
+					tracker = ((theBody.length-noMovement.length) *3) + 6;
 					k = 0;
 					offset = 0;
 					gcount = 0;
@@ -193,7 +232,8 @@
 			function scaleWorld(x,y,z){
 
 				if(scene != -1){
-					scene.objects[0].scale = scene.objects[0].scale.multiplyScalar(x);
+					theBody[0].scale = theBody[0].scale.multiplyScalar(x);
+					//scene.objects[0].scale = scene.objects[0].scale.multiplyScalar(x);
 					for(var i=0; i<ghostArray.length; i++){
 						ghostArray[i][0].scale = ghostArray[i][0].scale.multiplyScalar(x);
 					}
@@ -203,476 +243,494 @@
 			function scaleBones(x,y,z){
 
 				if(scene != -1){
-					//scene.objects[0].scale = scene.objects[0].scale.multiplyScalar(100);
-					/*for(var i=0; i<theBody.length; i++){
-						theBody[i].position.x = theBody[i].position.x*x;
-						theBody[i].position.y = theBody[i].position.y*y;
-						theBody[i].position.z = theBody[i].position.z*z;
-					}*/
 					scaleBodyBones(theBody[0], x, y, z);
+					drawLimbs(theBody, 1, false);
+					
+
 				}
 			}
 
 			function scaleBodyBones(parent, x, y, z){
-				for(var i=0; i<parent.children.length; i++){
+				for(var i= (parent.children.length - 1); i>=0; i--){
 					var child = parent.children[i];
+					scaleBodyBones(parent.children[i],x,y,z);
 					child.position.x = child.position.x*x;
 					child.position.y = child.position.y*y;
 					child.position.z = child.position.z*z;
-					//if the child is a cylinder shape, scale it up
-					scaleBodyBones(parent.children[i],x,y,z);
-				}
-			}
-			
-			
-		function App( containerId, fullWidth, fullHeight, viewX, viewY, viewWidth, viewHeight) {	
-			
-			
-
-
-
-			//takes the PHP array and stores it into a javascript array.
-			<?php 
-				for($i = 0; $i < count($hmm); $i++)
-				{
-					echo "tester[$i]='".$hmm[$i]."';\n";
-				}
-			?>
-			
-			//The 13, 14 and 15th items in the bvh file shows what order the rotation will be in
-			rotationOrder[0] = tester[13].charAt(0);
-			rotationOrder[1] = tester[14].charAt(0);
-			rotationOrder[2] = tester[15].charAt(0);
-			console.log(rotationOrder[0] + rotationOrder[1] + rotationOrder[2]);
-
-			parseJoint(1, null);
-			frameCount = tester[movementStart+1];
-			//frame time?	
-			movementStart += 5;
-			s = tester.length;
-			
-			//puts the movements into a seperate array.
-			for(var j = movementStart; j < tester.length; j++)
-			{
-					movement[k] = tester[j] *1;
-					k++;
-			}
-			
-			function findJoint (joint){
-				for(var i = 0; i<theBody.length; i++){
-					if(joint.id == theBody[i].id){
-						return theBody[i];
-					}
-				}
-			}
-			function parseJoint(startIndex, parent){
-				jointIndices.push(startIndex);
-				var joint = new THREE.Mesh(new THREE.SphereGeometry(2,20,20), legMaterial);
-				theBody.push(joint);
-				loc++;
-				var i = startIndex+1;
-				for(i; i < tester.length; i++){
-					if(tester[i] == '{'){
-						oBracket++;
-					}
-					else if(tester[i] == '}'){
-						cBracket++;
-						if(startIndex != 1){
-							return i-startIndex;
-						}
-					}
-					else if(tester[i] == 'OFFSET'){
-						joint.position.x = tester[i+1]*1;
-						joint.position.y = tester[i+2]*1;
-						joint.position.z = tester[i+3]*1;
-
-						if(parent != null){
-							var bodyParent = findJoint(parent);
-							parent.addChild(joint);
-						}
-						
-					}
-					else if(tester[i] == 'CHANNELS'){
-						
-						jointChannels.push(tester[i+1]); 
-					}
-					else if(tester[i] == 'JOINT'){
-						i += parseJoint(i, joint);
-					}
-					else if(tester[i] == 'End'){
-						noMovement[ender] = loc - 1;
-						ender++;
-						i += parseJoint(i, joint);
-					}
-					else if(tester[i] == 'MOTION'){
-						movementStart = i+1;
-						return;
+					if (limbsArray.indexOf(child) > -1){
+						console.log("here");
+						console.log(child.geometry);
+						parent.removeChild(child);
+						scene.removeObject(child);
 					}
 				}
 			}
 			
 			
-			
- 			initialize();
-			animate();
- 			//sets up the scene.
-			function initialize() {
- 
- 				//here we are setting a container to put the webgl scene in. You initalize paramters in 
-				//css at the top and then place the scene into that container here.
-				
-				var container = document.getElementById( containerId );
- 
- 				//trackball camera -> extremely useful 
-				//I added small changes to the code so you must press ALT to make it work.
-				camera = new THREE.TrackballCamera({ 
-					
-					//all the parameters you can tweak to get desired result.
-					fov: 60, 
-					aspect: 800 / 500,
-					near: 1,
-					far: 1e7,
+			function App( containerId, fullWidth, fullHeight, viewX, viewY, viewWidth, viewHeight) {	
 				
 				
-					domElement: container,
-					rotateSpeed: .8,
-					zoomSpeed: 1.2,
-					panSpeed: 0.8,
 
-					noZoom: false,
-					noPan: false,
 
-					staticMoving: true,
-					dynamicDampingFactor: 0.3,
 
-		
-				});
-		
-				//screen.width = container.clientWidth;
-				//screen.height = container.clientHeight;
- 				camera.position.z = 300;
-
-				//setting and adding the skeleton we made to the scene.
-				scene = new THREE.Scene();
-				scene.addObject( theBody[0] );
-				
-				//EULER ORDER -TESTING
-				for(var i=0; i<theBody.length; i++){
-					theBody[i].eulerOrder = rotationOrder[0]+rotationOrder[1]+rotationOrder[2];
-					//console.log(theBody[i].eulerOrder);
-				}
-				//make all the ghost spheres and limbs and store them in a double array.
-				makeGhostArray(theBody);
-
-				//here we initalize a renderer, rendering in WebGL allows us to use 3D
-				renderer = new THREE.WebGLRenderer();
-				renderer.setSize( container.clientWidth, container.clientHeight );
-				container.appendChild( renderer.domElement );
-				
-								
-				//since we are only given the positions of the spheres, this method will draw the limbs to connect them.					
-				drawLimbs(theBody, 0, false);	
-				//drawAllLimbs(theBody[0]);	
-					
-                //Draw the bottom grid
-                var geometry = new THREE.Geometry();
-                geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( - 500, 0, 0 ) ) );
-                geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( 500, 0, 0 ) ) );
-                material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 0.6 } );
-        
-                for ( var i = 0; i <= 10; i ++ ) 
-				{
-        
-                    var line = new THREE.Line( geometry, material );
-                    line.position.y = 0;
-                    line.position.z = ( i * 100 ) - 500;
-                    scene.addObject( line );
-				
-        
-                    var line = new THREE.Line( geometry, material );
-                    line.position.x = ( i * 100 ) - 500;
-                    line.position.y = 0;
-                    line.rotation.y = 90 * Math.PI / 180;
-                    scene.addObject( line );
-				
-        
-                 }
-				 
-				 
-				 
-				  stats = new Stats();
- 				  stats.domElement.style.position = 'absolute';
- 				  stats.domElement.style.top = '0px';
-				  
- 				  container.appendChild( stats.domElement );
-				  
-								
-			}
- 
-		
-			function makeGhostArray(theArray)
-			{
-					var offset = 0;
-					var gcount = 0;
-											
-				for(var s = 0; s < frameCount; s++)
+				//takes the PHP array and stores it into a javascript array.
+				<?php 
+					for($i = 0; $i < count($hmm); $i++)
 					{
-						
-						for(var joint = 0; joint < theBody.length; joint++)
-						{
-							for(var theEnd = 0; theEnd < noMovement.length; theEnd++)
-							{
-								//if it is an end joint it does not rotate, so we skip it.
-								if(joint == noMovement[theEnd])
-								{
-									joint++;
-
-								}
-							}
-
-							//Prevent index out of bounds exception in case the last joint was an end joint
-							if (joint >= theArray.length){
-								break;
-							}
-
-							//if it is the root it has rotations and positions. we handle this seperately.
-							if(joint == 0)
-							{
-								theArray[joint].position.x = movement[offset++];
-								theArray[joint].position.z = -movement[offset++];
-								theArray[joint].position.y = movement[offset++];
-
-								for(var i = 0; i < 3; i++){
-									if(rotationOrder[i] == "X"){
-										theArray[joint].rotation.x = Math.PI/180 * movement[offset] + Math.PI /180 * -90;
-									}
-									else if(rotationOrder[i] == "Y"){
-										theArray[joint].rotation.y = Math.PI/180 * movement[offset] ;
-									}
-									else if(rotationOrder[i] == "Z"){
-										theArray[joint].rotation.z = Math.PI/180 * movement[offset];
-									}
-									offset++;
-								}
-							
+						echo "tester[$i]='".$hmm[$i]."';\n";
+					}
+				?>
 				
-							}
+				//The 13, 14 and 15th items in the bvh file shows what order the rotation will be in
+				rotationOrder[0] = tester[13].charAt(0);
+				rotationOrder[1] = tester[14].charAt(0);
+				rotationOrder[2] = tester[15].charAt(0);
+				console.log(rotationOrder[0] + rotationOrder[1] + rotationOrder[2]);
+
+				parseJoint(1, null);
+				frameCount = tester[movementStart+1];
+				fps = 1 / (tester[movementStart+4]*1);
+				//frame time?	
+				movementStart += 5;
+				s = tester.length;
 				
-							//if it's not the root it has three rotations like everything else.
-							else
-							{	
-								for(var i = 0; i < 3; i++){
-									if(rotationOrder[i] == "X"){
-										theArray[joint].rotation.x = movement[offset] * Math.PI/180;
-									}
-									else if(rotationOrder[i] == "Y"){
-										theArray[joint].rotation.y = movement[offset] * Math.PI/180;
-									}
-									else if(rotationOrder[i] == "Z"){
-										theArray[joint].rotation.z = movement[offset] * Math.PI/180;
-									}
-									offset++;
-								}
-								
+				//puts the movements into a seperate array.
+				for(var j = movementStart; j < tester.length; j++)
+				{
+						movement[k] = tester[j] *1;
+						k++;
+				}
+				
+				function findJoint (joint){
+					for(var i = 0; i<theBody.length; i++){
+						if(joint.id == theBody[i].id){
+							return theBody[i];
+						}
+					}
+				}
+				function parseJoint(startIndex, parent){
+					jointIndices.push(startIndex);
+					var joint = new THREE.Mesh(new THREE.SphereGeometry(2,20,20), legMaterial);
+					theBody.push(joint);
+					loc++;
+					var i = startIndex+1;
+					for(i; i < tester.length; i++){
+						if(tester[i] == '{'){
+							oBracket++;
+						}
+						else if(tester[i] == '}'){
+							cBracket++;
+							if(startIndex != 1){
+								return i-startIndex;
+							}
+						}
+						else if(tester[i] == 'OFFSET'){
+							joint.position.x = tester[i+1]*1;
+							joint.position.y = tester[i+2]*1;
+							joint.position.z = tester[i+3]*1;
+
+							if(parent != null){
+								var bodyParent = findJoint(parent);
+								parent.addChild(joint);
 							}
 							
 						}
-							if(s % 100 ==0 && s > 99)
-							{
+						else if(tester[i] == 'CHANNELS'){
 							
-								
-									ghostArray[gcount] = new Array(30);
-									for(var i = 0; i < theBody.length; i++)
-									{
-										
-										root = new THREE.Mesh( new THREE.SphereGeometry(2,20,20), ghostLegMaterial);
-										root.position.x = theArray[i].position.x;
-										root.position.y = theArray[i].position.y;
-										root.position.z = theArray[i].position.z;
-								
+							jointChannels.push(tester[i+1]); 
+						}
+						else if(tester[i] == 'JOINT'){
+							i += parseJoint(i, joint);
+						}
+						else if(tester[i] == 'End'){
+							noMovement[ender] = loc - 1;
+							ender++;
+							i += parseJoint(i, joint);
+						}
+						else if(tester[i] == 'MOTION'){
+							movementStart = i+1;
+							return;
+						}
+					}
+				}
+				
+				
+				
+	 			initialize();
+				animate();
+	 			//sets up the scene.
+				function initialize() {
+	 
+	 				//here we are setting a container to put the webgl scene in. You initalize paramters in 
+					//css at the top and then place the scene into that container here.
+					
+					var container = document.getElementById( containerId );
+	 
+	 				//trackball camera -> extremely useful 
+					//I added small changes to the code so you must press ALT to make it work.
+					camera = new THREE.TrackballCamera({ 
+						
+						//all the parameters you can tweak to get desired result.
+						fov: 60, 
+						aspect: 800 / 500,
+						near: 1,
+						far: 1e7,
+					
+					
+						domElement: container,
+						rotateSpeed: .8,
+						zoomSpeed: 1.2,
+						panSpeed: 0.8,
 
+						noZoom: false,
+						noPan: false,
 
-										root.rotation.x = theArray[i].rotation.x;
-										root.rotation.y = theArray[i].rotation.y;
-										root.rotation.z = theArray[i].rotation.z;
+						staticMoving: true,
+						dynamicDampingFactor: 0.3,
+
+			
+					});
+			
+					//screen.width = container.clientWidth;
+					//screen.height = container.clientHeight;
+	 				camera.position.z = 300;
+
+					//setting and adding the skeleton we made to the scene.
+					scene = new THREE.Scene();
+					scene.addObject( theBody[0] );
+					
+					//EULER ORDER -TESTING
+					for(var i=0; i<theBody.length; i++){
+						theBody[i].eulerOrder = rotationOrder[0]+rotationOrder[1]+rotationOrder[2];
+						//console.log(theBody[i].eulerOrder);
+					}
+					//make all the ghost spheres and limbs and store them in a double array.
+					makeGhostArray(theBody);
+
+					//here we initalize a renderer, rendering in WebGL allows us to use 3D
+					renderer = new THREE.WebGLRenderer();
+					renderer.setSize( container.clientWidth, container.clientHeight );
+					container.appendChild( renderer.domElement );
+					
 									
-										ghostArray[gcount][i] = root;
-							
-									}
-									for(var r = 0; r < theBody.length; r++)
-									{
-										for(var t = 0; t < theBody.length; t++)
-											{
-												if(theBody[r].parent == theBody[t])
-												{	
-													ghostArray[gcount][t].addChild(ghostArray[gcount][r]);	
-												}
-											}
-									}
+					//since we are only given the positions of the spheres, this method will draw the limbs to connect them.					
+					drawLimbs(theBody, 0, false);	
+					//drawAllLimbs(theBody[0]);	
 						
+	                //Draw the bottom grid
+	                var geometry = new THREE.Geometry();
+	                geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( - 500, 0, 0 ) ) );
+	                geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( 500, 0, 0 ) ) );
+	                material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 0.3 } );
+	        
+	                for ( var i = 0; i <= 10; i ++ ) 
+					{
+	        
+	                    var line = new THREE.Line( geometry, material );
+	                    line.position.y = 0;
+	                    line.position.z = ( i * 100 ) - 500;
+	                    scene.addObject( line );
+					
+	        
+	                    var line = new THREE.Line( geometry, material );
+	                    line.position.x = ( i * 100 ) - 500;
+	                    line.position.y = 0;
+	                    line.rotation.y = 90 * Math.PI / 180;
+	                    scene.addObject( line );
+
+	                    /*var line = new THREE.Line( geometry, material );
+	                    line.position.x = ( i * 100 ) - 500;;
+	                    line.position.y = 0;
+	                    line.rotation.z = 90 * Math.PI / 180;
+	                    scene.addObject( line );*/
+					
+					
+	        
+	                 }
+					 
+					 
+					 
+					  stats = new Stats();
+	 				  stats.domElement.style.position = 'absolute';
+	 				  stats.domElement.style.top = '0px';
+					  
+	 				  container.appendChild( stats.domElement );
+					  
+									
+				}
+	 
 			
-								drawLimbs(ghostArray,gcount,true);
-								gcount++;
+				function makeGhostArray(theArray)
+				{
+						var offset = 0;
+						var gcount = 0;
+												
+					for(var s = 0; s < frameCount; s++)
+						{
 							
-			
-					
-					}
-	
-				}
-			
-			}
-		
-
-			//function to draw the limbs.
-			//num is only used for the ghost array.
-			//double determines whether this is a doubleArray
-			function drawLimbs(theArray, num, double)
-			{
-				var joint1, joint2, tempX, tempY, tempZ, theLimb, rotX, rotY, rotZ, distance;
-				var sphereMaterial = new THREE.MeshLambertMaterial({color: 0xCC0000});
-				if(double){
-					sphereMaterial.opacity = 0.5;
-				}
-				var placementX, placementY,placementZ;
-				var placementArray= new Array();
-					
-					//clones the array so its passed by value, not by reference
-					for(var world = 0; world < theBody.length; world++)
-					{
-						theWorldBody[world] = (new THREE.Vertex((theBody[world].position.clone())));
-						placementArray[world] = (new THREE.Vertex((theBody[world].position.clone())));
-					}
-
-					//this loop keeps track of the world positions.
-					for(var world2 = 1; world2 < theWorldBody.length; world2++)
-					{
-						//if the parent is the previous location, just take the current local position of 
-						//the sphere and add it to the previous's world position.
-						if(theBody[world2].parent == theBody[world2-1])
+							for(var joint = 0; joint < theBody.length; joint++)
 							{
-								theWorldBody[world2].position.x += (theWorldBody[world2-1].position.x);
-								theWorldBody[world2].position.y += (theWorldBody[world2-1].position.y);
-								theWorldBody[world2].position.z += (theWorldBody[world2-1].position.z);
-							}
-							else 
-							{
-								//if not we have to find the parent. and add the current local position to it's 
-								//parent's world position
-								for(var r = 0; r < theWorldBody.length; r++)
+								for(var theEnd = 0; theEnd < noMovement.length; theEnd++)
 								{
-									if(theBody[world2].parent == theBody[r])
+									//if it is an end joint it does not rotate, so we skip it.
+									if(joint == noMovement[theEnd])
 									{
-										theWorldBody[world2].position.x += (theWorldBody[r].position.x);
-										theWorldBody[world2].position.y += (theWorldBody[r].position.y);
-										theWorldBody[world2].position.z += (theWorldBody[r].position.z);
-										//if we find it then we can exit the loop.
+										joint++;
+
+									}
+								}
+
+								//Prevent index out of bounds exception in case the last joint was an end joint
+								if (joint >= theArray.length){
+									break;
+								}
+
+								//if it is the root it has rotations and positions. we handle this seperately.
+								if(joint == 0)
+								{
+									theArray[joint].position.x = movement[offset++];
+									theArray[joint].position.z = -movement[offset++];
+									theArray[joint].position.y = movement[offset++];
+
+									for(var i = 0; i < 3; i++){
+										if(rotationOrder[i] == "X"){
+											theArray[joint].rotation.x = Math.PI/180 * movement[offset] + Math.PI /180 * -90;
+										}
+										else if(rotationOrder[i] == "Y"){
+											theArray[joint].rotation.y = Math.PI/180 * movement[offset] ;
+										}
+										else if(rotationOrder[i] == "Z"){
+											theArray[joint].rotation.z = Math.PI/180 * movement[offset];
+										}
+										offset++;
+									}
+								
+					
+								}
+					
+								//if it's not the root it has three rotations like everything else.
+								else
+								{	
+									for(var i = 0; i < 3; i++){
+										if(rotationOrder[i] == "X"){
+											theArray[joint].rotation.x = movement[offset] * Math.PI/180;
+										}
+										else if(rotationOrder[i] == "Y"){
+											theArray[joint].rotation.y = movement[offset] * Math.PI/180;
+										}
+										else if(rotationOrder[i] == "Z"){
+											theArray[joint].rotation.z = movement[offset] * Math.PI/180;
+										}
+										offset++;
+									}
+									
+								}
+								
+							}
+								if(s % 100 ==0 && s > 99)
+								{
+								
+									
+										ghostArray[gcount] = new Array(30);
+										for(var i = 0; i < theBody.length; i++)
+										{
+											
+											root = new THREE.Mesh( new THREE.SphereGeometry(2,20,20), ghostLegMaterial);
+											root.position.x = theArray[i].position.x;
+											root.position.y = theArray[i].position.y;
+											root.position.z = theArray[i].position.z;
+									
+
+
+											root.rotation.x = theArray[i].rotation.x;
+											root.rotation.y = theArray[i].rotation.y;
+											root.rotation.z = theArray[i].rotation.z;
+										
+											ghostArray[gcount][i] = root;
+								
+										}
+										for(var r = 0; r < theBody.length; r++)
+										{
+											for(var t = 0; t < theBody.length; t++)
+												{
+													if(theBody[r].parent == theBody[t])
+													{	
+														ghostArray[gcount][t].addChild(ghostArray[gcount][r]);	
+													}
+												}
+										}
+							
+				
+									drawLimbs(ghostArray,gcount,true);
+									gcount++;
+								
+				
+						
+						}
+		
+					}
+				
+				}
+			
+
+				//function to draw the limbs.
+				//num is only used for the ghost array.
+				//double determines whether this is a doubleArray
+				
+				//this is so we know how many numbers there will be for each frame.
+				tracker = ((theBody.length-noMovement.length) *3) + 6;
+				gcount = 0;
+				k = 0;	 
+				offset = 0;
+				
+			}
+
+		function drawLimbs(theArray, num, double)
+				{
+					var joint1, joint2, tempX, tempY, tempZ, theLimb, rotX, rotY, rotZ, distance;
+					var sphereMaterial = new THREE.MeshLambertMaterial({color: 0xCC0000});
+					if(double){
+						sphereMaterial.opacity = 0.5;
+					}
+					var placementX, placementY,placementZ;
+					var placementArray= new Array();
+						
+						//clones the array so its passed by value, not by reference
+						for(var world = 0; world < theBody.length; world++)
+						{
+							theWorldBody[world] = (new THREE.Vertex((theBody[world].position.clone())));
+							placementArray[world] = (new THREE.Vertex((theBody[world].position.clone())));
+						}
+
+						//this loop keeps track of the world positions.
+						for(var world2 = 1; world2 < theWorldBody.length; world2++)
+						{
+							//if the parent is the previous location, just take the current local position of 
+							//the sphere and add it to the previous's world position.
+							if(theBody[world2].parent == theBody[world2-1])
+								{
+									theWorldBody[world2].position.x += (theWorldBody[world2-1].position.x);
+									theWorldBody[world2].position.y += (theWorldBody[world2-1].position.y);
+									theWorldBody[world2].position.z += (theWorldBody[world2-1].position.z);
+								}
+								else 
+								{
+									//if not we have to find the parent. and add the current local position to it's 
+									//parent's world position
+									for(var r = 0; r < theWorldBody.length; r++)
+									{
+										if(theBody[world2].parent == theBody[r])
+										{
+											theWorldBody[world2].position.x += (theWorldBody[r].position.x);
+											theWorldBody[world2].position.y += (theWorldBody[r].position.y);
+											theWorldBody[world2].position.z += (theWorldBody[r].position.z);
+											//if we find it then we can exit the loop.
+											r = theWorldBody.length;
+											
+										}
+									}
+									
+									
+								}
+								
+						}
+					
+					//here is where the calculations are done to find the correct position, length, and rotation of the cylinder limb.
+					var placer, other= 0;
+					for(var i = 1; i < theBody.length; i++)
+					{
+						//if the parent is the previous object in array, use these positons
+					   	if(theBody[i].parent == theBody[i-1])
+					   	{
+							placer = i-1;
+							other = i;
+					   	}
+					  	
+						else
+						{	
+							//if not we have to find teh parent's position.
+							for(var r = 0; r < theWorldBody.length; r++){
+									if(theBody[i].parent == theBody[r])
+									{
+
+										placer = r;
+										other = i;
+										//exit the loop
 										r = theWorldBody.length;
 										
-									}
-								}
-								
-								
+								     }
 							}
-							
-					}
-				
-				//here is where the calculations are done to find the correct position, length, and rotation of the cylinder limb.
-				var placer, other= 0;
-				for(var i = 1; i < theBody.length; i++)
-				{
-					//if the parent is the previous object in array, use these positons
-				   	if(theBody[i].parent == theBody[i-1])
-				   	{
-						placer = i-1;
-						other = i;
-				   	}
-				  	
-					else
-					{	
-						//if not we have to find teh parent's position.
-						for(var r = 0; r < theWorldBody.length; r++){
-								if(theBody[i].parent == theBody[r])
-								{
-
-									placer = r;
-									other = i;
-									//exit the loop
-									r = theWorldBody.length;
-									
-							     }
+		
 						}
-	
-					}
-				   			
-		   			//keep track of lengths.		
-					var v1 = new THREE.Vector3(theWorldBody[placer].position.x, theWorldBody[placer].position.y, theWorldBody[placer].position.z);
-					var v2 = new THREE.Vector3(theWorldBody[other].position.x, theWorldBody[other].position.y, theWorldBody[other].position.z);
-					var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
-					var v4 = new THREE.Vector3(0, 0, 1); //the axis vector
-						
-					placementX = placementArray[other].position.x;
-					placementY = placementArray[other].position.y;
-					placementZ = placementArray[other].position.z;	
-					
-					//new cylinder object
-					var boneThickness = 1.5;
-		   			theLimb = new THREE.Mesh( new THREE.CylinderGeometry( 30, boneThickness, boneThickness, v3.length() -2 , 1, 1), sphereMaterial );
-					
-					//keeps track of where to place the limb.
-					placementX /= 2;
-					placementY /= 2;
-					placementZ /= 2;	
-				
-					//calculations with quaternions for rotation
-					v4.normalize();
-					v3.normalize();
-					var crossVecs = new THREE.Vector3();
-					crossVecs.cross(v4,v3);
-					crossVecs.normalize();
-
-					var dotVecs = Math.acos(v3.dot(v4)/(v3.length()*v4.length()));
-
-					q1 = new THREE.Quaternion();
-					q1.setFromAxisAngle(crossVecs, dotVecs);
-					q1.normalize();
-
-					if(distance !=0)
-					{
-				
-						theLimb.useQuaternion = true;
-						theLimb.quaternion = q1;
-
-					}
-					//sets the position and adds the object to the parent
-					theLimb.position.x = placementX;
-					theLimb.position.y = placementY;
-					theLimb.position.z = placementZ;
-					
-					if(double){
-						theArray[num][placer].addChild(theLimb);
-					}
-					else{
-						theArray[placer].addChild(theLimb);
-						limbsArray.push(theLimb);
-					}
-					
+					   			
+			   			//keep track of lengths.		
+						var v1 = new THREE.Vector3(theWorldBody[placer].position.x, theWorldBody[placer].position.y, theWorldBody[placer].position.z);
+						var v2 = new THREE.Vector3(theWorldBody[other].position.x, theWorldBody[other].position.y, theWorldBody[other].position.z);
+						var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
+						var v4 = new THREE.Vector3(0, 0, 1); //the axis vector
 							
-
-				}
-			
+						placementX = placementArray[other].position.x;
+						placementY = placementArray[other].position.y;
+						placementZ = placementArray[other].position.z;	
+						
+						//new cylinder object
+						var boneThickness = 1.5;
+			   			theLimb = new THREE.Mesh( new THREE.CylinderGeometry( 30, boneThickness, boneThickness, v3.length() -2 , 1, 1), sphereMaterial );
+						
+						//keeps track of where to place the limb.
+						placementX /= 2;
+						placementY /= 2;
+						placementZ /= 2;	
 					
-			}
-			//this is so we know how many numbers there will be for each frame.
-			var tracker = ((theBody.length-noMovement.length) *3) + 6;
-			gcount = 0;
-			k = 0;	 
-			offset = 0;
-			
-		}
+						//calculations with quaternions for rotation
+						v4.normalize();
+						v3.normalize();
+						var crossVecs = new THREE.Vector3();
+						crossVecs.cross(v4,v3);
+						crossVecs.normalize();
+
+						var dotVecs = Math.acos(v3.dot(v4)/(v3.length()*v4.length()));
+
+						q1 = new THREE.Quaternion();
+						q1.setFromAxisAngle(crossVecs, dotVecs);
+						q1.normalize();
+
+						if(distance !=0)
+						{
+					
+							theLimb.useQuaternion = true;
+							theLimb.quaternion = q1;
+
+						}
+						//sets the position and adds the object to the parent
+						theLimb.position.x = placementX;
+						theLimb.position.y = placementY;
+						theLimb.position.z = placementZ;
+						
+						if(double){
+							theArray[num][placer].addChild(theLimb);
+						}
+						else{
+							theArray[placer].addChild(theLimb);
+							limbsArray.push(theLimb);
+						}
+						
+								
+
+					}
+				
+						
+				}
 		//handles the animation
 		function animate() {
+
+			//Set the frame rate to the value found in the bvh file
+			//Remove the setTimeout bit if you just want 60 fps
+			setTimeout( function() {
 				
 			requestAnimationFrame( animate );
+
+			}, 1000/fps);
 			
 			if(!paused){
 				//frame count is found in the file that we read in.
@@ -725,9 +783,9 @@
 						else
 						{	
 							if (jointChannels[joint] == 6){
-								theBody[joint].position.x = movement[offset++];
-								theBody[joint].position.z = -movement[offset++];
-								theBody[joint].position.y = movement[offset++];
+								//theBody[joint].position.x = movement[offset++];
+								//theBody[joint].position.z = -movement[offset++];
+								//theBody[joint].position.y = movement[offset++];
 								//offset+=3;
 							}
 
