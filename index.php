@@ -29,6 +29,7 @@
 				width: 1000px;
 			}
 			#container{
+				overflow: hidden;
 				position: absolute;
 				background-color: #282828 ;
 				margin: 0px auto;
