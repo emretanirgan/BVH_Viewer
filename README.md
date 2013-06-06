@@ -8,21 +8,20 @@ Known Bugs:
 To Do:
 
 - Frame by frame playing -->Works going forward, need to implement going back frames +
-- Set the scene automatically -- detect bounding box and adjust the up vector and scale according to that --> works but looks wrong
+- Set the scene automatically -- detect bounding box and adjust the up vector and scale according to that -->+
 - Different environment/body model/ground
-- Going backwards frame by frame -> very small bug
+- Going backwards frame by frame -> very small bug +
 - starting perspective more user-friendly + 
 - responsive layout +
 - buttons on the side +
 - icons for play/pause +
 - automatically scale bones (keep track of max bone size, if below certain amount scale bones up) +
-- ground plane moving with character
+
 
 
 Increase Performance:
 
 - Trace toggle button could be more efficient --> DONE
-- Cache initial php file parsing
-- Cache the body array?
+
 
 

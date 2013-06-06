@@ -20,6 +20,9 @@
 			p {
 				font-size: 1.2em;
 			}
+			a{
+				text-decoration: none;
+			}
 			a:hover{
 				text-decoration: underline;
 			}
@@ -120,6 +123,13 @@
 				background-image: url("replayhover.png");
 				background-color:#ebe8eb;
 			}
+			footer {
+				position: fixed;
+				bottom:0px; 
+				margin: 0px auto;
+				width:100%;
+				text-align: center;
+			}
 
 		</style> 
 	</head> 
@@ -183,6 +193,9 @@
 	        	<!--<input id="scaleSlider" type="text" data-slider="true">Scale</input>-->
 	        </div> 
 	    </div>
+	    <footer>
+	    	2013 - Created by Emre Tanirgan and Kelsey Hurley. View source code <a href="https://github.com/emretanirgan/BVH_Viewer">here</a>.
+	    </footer>
  
         
         
