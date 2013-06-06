@@ -167,7 +167,15 @@
 				}
 			}
 			
-			
+			function arraySwap(){
+				//takes the PHP array and stores it into a javascript array.
+				<?php 
+					for($i = 0; $i < count($hmm); $i++)
+					{
+						echo "tester[$i]='".$hmm[$i]."';\n";
+					}
+				?>
+			}
 		function App( containerId, fullWidth, fullHeight, viewX, viewY, viewWidth, viewHeight) {	
 			
 			var renderer, root, stats;
@@ -200,13 +208,7 @@
 			//As long as you keep a consisten rotation order in the BVH file, this should work
 			var rotationOrder = new Array();
 
-			//takes the PHP array and stores it into a javascript array.
-			<?php 
-				for($i = 0; $i < count($hmm); $i++)
-				{
-					echo "tester[$i]='".$hmm[$i]."';\n";
-				}
-			?>
+			
 			
 			//The 13, 14 and 15th items in the bvh file shows what order the rotation will be in
 			rotationOrder[0] = tester[13].charAt(0);
