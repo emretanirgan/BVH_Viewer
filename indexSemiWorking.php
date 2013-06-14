@@ -685,7 +685,7 @@
 					var v1 = new THREE.Vector3(theWorldBody[placer].position.x, theWorldBody[placer].position.y, theWorldBody[placer].position.z);
 					var v2 = new THREE.Vector3(theWorldBody[other].position.x, theWorldBody[other].position.y, theWorldBody[other].position.z);
 					var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
-					var v4 = new THREE.Vector3(0, 0, 1); //the axis vector
+					var v4 = new THREE.Vector3(1, 0, 0); //the axis vector
 						
 					placementX = placementArray[other].position.x;
 					placementY = placementArray[other].position.y;

@@ -152,7 +152,7 @@
 				   	<div id="bot">
 				        <p> To rotate the camera, hold ALT and click and drag on the canvas. 
 				        	To pan the camera, hold ALT and click and drag using the middle mouse button. 
-				        	To zoom in and out, use the mouse wheel or hold ALT and click and drag using the right mouse button.
+				        	To zoom in and out, hold ALT and click and drag using the right mouse button.
 				        </p>
 			   		</div>
 			</div> 
@@ -200,10 +200,9 @@
         
         
 		
-		<script type="text/javascript" src="Three.js"></script> 
+		<script type="text/javascript" src="Three2.js"></script> 
 		<script type="text/javascript" src="RequestAnimationFrame.js"></script> 
 		<script type ="text/javascript" src="TrackballCamera.js"></script>
-		<script type ="text/javascript" src="TrackballControls.js"></script>
         <script type ="text/javascript" src="Stats.js"></script>
  		<script type ="text/javascript" src="jquery-1.9.1.min.js"></script>
  		<!--<script src="simple-slider.js"></script>-->
@@ -222,21 +221,20 @@
 			var limbsArray = new Array();
 			var frameCount = 0;
 			var theBody = -1;
-			var groundplane = -1;
 			var k = 0;
 			var noMovement = new Array();
 			var renderer, root, stats;
 			var movement = new Array();
 			var theWorldBody = new Array();
-			var ghostLegMaterial = new THREE.MeshBasicMaterial({color: 0x6666FF, opacity:0.5, transparent:true});
-			var ghostLimbMaterial = new THREE.MeshBasicMaterial({color: 0xCC0000, opacity:0.5, transparent:true});
+			var ghostLegMaterial = new THREE.MeshLambertMaterial({color: 0x6666FF, opacity:0.5});
+			var ghostLimbMaterial = new THREE.MeshLambertMaterial({color: 0xCC0000, opacity:0.5});
 			var offset = 0;
 			var tracker = 0;
 		
 			var jointChannels = new Array();
 			var jointIndices = new Array();
 			theBody = new Array();
-			var legMaterial = new THREE.MeshBasicMaterial({color: 0x6666FF});
+			var legMaterial = new THREE.MeshLambertMaterial({color: 0x6666FF});
 
  			var tester = new Array();
 			
@@ -252,8 +250,7 @@
 			var t =0;
 			var BodyHolder = 0;
 			var maxLimb = -100;
-			var controls;
-			var endTimes = 0;
+
 
 			//As long as you keep a consistent rotation order in the BVH file, this should work
 			var rotationOrder = new Array();
@@ -263,12 +260,12 @@
 			function toggleTrace(){
 				if(traceOn){
 					for (var i=0; i < gcount; i++){
-						scene.remove(ghostArray[i][0]);
+						scene.removeObject(ghostArray[i][0]);
 					}
 				}
 				else{
 					for(var i = 0; i < gcount; i++){
-						scene.add(ghostArray[i][0]);
+						scene.addObject(ghostArray[i][0]);
 					}
 					
 				}
@@ -321,19 +318,20 @@
 			//Pauses/plays animation
 			function pauseAnim(){
 				paused = !paused;
-				//console.log(this);
+				console.log(this);
 			}
 
 			//Replay animation
 			function replayAnim(){
 				if(scene != -1){
 					for(var i=0; i<ghostArray.length; i++){
-						scene.remove(ghostArray[i][0]);
+						scene.removeObject(ghostArray[i][0]);
 					}
 					tracker = ((theBody.length-noMovement.length) *3) + 6;
 					k = 0;
 					offset = 0;
 					gcount = 0;
+					animate();
 				}
 			}
 
@@ -372,8 +370,8 @@
 					child.position.y = child.position.y*y;
 					child.position.z = child.position.z*z;
 					if (limbsArray.indexOf(child) > -1){
-						parent.remove(child);
-						scene.remove(child);
+						parent.removeChild(child);
+						scene.removeObject(child);
 					}
 				}
 			}
@@ -383,8 +381,8 @@
 					var child = parent.children[i];
 					removeLimbs(child);
 					if (limbsArray.indexOf(child) > -1){
-						parent.remove(child);
-						scene.remove(child);
+						parent.removeChild(child);
+						scene.removeObject(child);
 					}
 				}
 			}
@@ -401,7 +399,11 @@
 
 			function App( containerId, fullWidth, fullHeight, viewX, viewY, viewWidth, viewHeight) {	
 				
+				
 
+
+
+			
 				swapArray();
 				//The 13, 14 and 15th items in the bvh file shows what order the rotation will be in
 				rotationOrder[0] = tester[13].charAt(0);
@@ -435,7 +437,6 @@
 				function parseJoint(startIndex, parent){
 					jointIndices.push(startIndex);
 					var joint = new THREE.Mesh(new THREE.SphereGeometry(2,20,20), legMaterial);
-					joint.name = tester[startIndex+1];
 					theBody.push(joint);
 					loc++;
 					var i = startIndex+1;
@@ -458,19 +459,19 @@
 
 								if(parent != null){
 									var bodyParent = findJoint(parent);
-									parent.add(joint);
+									parent.addChild(joint);
 								}
 								
 							}
 							else if(token == 'CHANNELS'){
 								
-								jointChannels.push(tester[i+1]*1); 
+								jointChannels.push(tester[i+1]); 
 							}
 							else if(token == 'JOINT'){
 								i += parseJoint(i, joint);
 							}
 							else if(token == 'End'){
-								noMovement[ender] = loc;
+								noMovement[ender] = loc - 1;
 								ender++;
 								i += parseJoint(i, joint);
 							}
@@ -496,30 +497,39 @@
 	 
 	 				//trackball camera -> extremely useful 
 					//I added small changes to the code so you must press ALT to make it work.
-					camera = new THREE.PerspectiveCamera(60, 800/500, 1, 1e7);
-					camera.position.z = 100;
-					camera.position.y = 100;
-	 				camera.position.x = -200;
-	 				//camera.position.x = 800;
+					camera = new THREE.TrackballCamera({ 
+						
+						//all the parameters you can tweak to get desired result.
+						fov: 60, 
+						aspect: 800 / 500,
+						near: 1,
+						far: 1e7,
+					
+					
+						domElement: container,
+						rotateSpeed: .8,
+						zoomSpeed: 1.4,
+						panSpeed: 0.8,
 
-					controls = new THREE.TrackballControls(camera, container);
-					controls.rotateSpeed = 1.0;
-					controls.zoomSpeed = 1.4;
-					controls.panSpeed = 0.8;
+						noZoom: false,
+						noPan: false,
 
-					controls.noZoom = false;
-					controls.noPan = false;
-
-					controls.staticMoving = true;
-					controls.dynamicDampingFactor = 0.3;
+						staticMoving: true,
+						dynamicDampingFactor: 0.3,
 
 			
+					});
+			
+					//screen.width = container.clientWidth;
+					//screen.height = container.clientHeight;
+	 				camera.position.z = 100;
+	 				camera.position.y = 100;
+	 				camera.position.x = -200;
 
 					//setting and adding the skeleton we made to the scene.
 					scene = new THREE.Scene();
-					scene.add( theBody[0] );
+					scene.addObject( theBody[0] );
 					
-
 					//EULER ORDER -TESTING
 					for(var i=0; i<theBody.length; i++){
 						theBody[i].eulerOrder = rotationOrder[0]+rotationOrder[1]+rotationOrder[2];
@@ -539,33 +549,53 @@
 					if (maxLimb < 5){
 						scaleBones(25/maxLimb, 25/maxLimb, 25/maxLimb);
 					}
+					//Auto set bounding box
+					var boundingbox = getBoundingBox(theBody[0]);
+					console.log(boundingbox);
+					var xlen = boundingbox.max.x - boundingbox.min.x;
+					var ylen = boundingbox.max.y - boundingbox.min.y;
+					var zlen = boundingbox.max.z - boundingbox.min.z;
+					//var maxlen = Math.max(xlen,ylen,zlen);
+					var maxlen = Math.max(xlen,ylen);
+					if (maxlen == xlen){
+						console.log("X");
+						setUpVector(1,0,0);
+					}
+					else if (maxlen == ylen){
+						console.log("Y");
+						setUpVector(0,1,0);
+					}
+					else if (maxlen == zlen){
+						console.log("Z");
+						setUpVector(0,0,1);
+					}
+					console.log(Math.max(xlen,ylen,zlen));
+
+					//drawAllLimbs(theBody[0]);	
 						
 	                //Draw the bottom grid
 	                var geometry = new THREE.Geometry();
-	                geometry.vertices.push( new THREE.Vector3( - 500, 0, 0 )  );
-	                geometry.vertices.push( new THREE.Vector3( 500, 0, 0 )  );
+	                geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( - 500, 0, 0 ) ) );
+	                geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( 500, 0, 0 ) ) );
 	                material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 0.3 } );
-	        		
-	        		groundplane = new THREE.Object3D();
+	        
 	                for ( var i = 0; i <= 10; i ++ ) 
 					{
 	        
 	                    var line = new THREE.Line( geometry, material );
 	                    line.position.y = 0;
 	                    line.position.z = ( i * 100 ) - 500;
-	                    groundplane.add( line );
+	                    scene.addObject( line );
 					
 	        
 	                    var line = new THREE.Line( geometry, material );
 	                    line.position.x = ( i * 100 ) - 500;
 	                    line.position.y = 0;
 	                    line.rotation.y = 90 * Math.PI / 180;
-	                    groundplane.add( line );
+	                    scene.addObject( line );
 					
 	        
 	                 }
-
-	                 scene.add(groundplane);
 					 
 					 
 					 
@@ -594,7 +624,7 @@
 		function drawLimbs(theArray, num, double)
 				{
 					var joint1, joint2, tempX, tempY, tempZ, theLimb, rotX, rotY, rotZ, distance;
-					var sphereMaterial = new THREE.MeshBasicMaterial({color: 0xCC0000});
+					var sphereMaterial = new THREE.MeshLambertMaterial({color: 0xCC0000});
 					if(double){
 						sphereMaterial.opacity = 0.5;
 					}
@@ -605,8 +635,8 @@
 					//clones the array so its passed by value, not by reference
 					for(var world = 0; world < theBody.length; world++)
 					{
-						theWorldBody[world] = theBody[world].position.clone();
-						placementArray[world] = theBody[world].position.clone();
+						theWorldBody[world] = (new THREE.Vertex((theBody[world].position.clone())));
+						placementArray[world] = (new THREE.Vertex((theBody[world].position.clone())));
 					}
 
 					var worldLen = theWorldBody.length;
@@ -620,9 +650,9 @@
 						//the sphere and add it to the previous's world position.
 						if(theBody[world2].parent == theBody[world2-1])
 							{
-								bodyWorld2.x += (bodyPrev.x);
-								bodyWorld2.y += (bodyPrev.y);
-								bodyWorld2.z += (bodyPrev.z);
+								bodyWorld2.position.x += (bodyPrev.position.x);
+								bodyWorld2.position.y += (bodyPrev.position.y);
+								bodyWorld2.position.z += (bodyPrev.position.z);
 							}
 							else 
 							{
@@ -634,9 +664,9 @@
 									if(theBody[world2].parent == theBody[r])
 									{
 										var parentWorld = theWorldBody[r];
-										bodyWorld2.x += (parentWorld.x);
-										bodyWorld2.y += (parentWorld.y);
-										bodyWorld2.z += (parentWorld.z);
+										bodyWorld2.position.x += (parentWorld.position.x);
+										bodyWorld2.position.y += (parentWorld.position.y);
+										bodyWorld2.position.z += (parentWorld.position.z);
 										//if we find it then we can exit the loop.
 										r = theWorldBody.length;
 										
@@ -677,22 +707,21 @@
 						}
 					   			
 			   			//keep track of lengths.		
-						var v1 = new THREE.Vector3(theWorldBody[placer].x, theWorldBody[placer].y, theWorldBody[placer].z);
-						var v2 = new THREE.Vector3(theWorldBody[other].x, theWorldBody[other].y, theWorldBody[other].z);
+						var v1 = new THREE.Vector3(theWorldBody[placer].position.x, theWorldBody[placer].position.y, theWorldBody[placer].position.z);
+						var v2 = new THREE.Vector3(theWorldBody[other].position.x, theWorldBody[other].position.y, theWorldBody[other].position.z);
 						var v3 = new THREE.Vector3(v1.x-v2.x, v1.y - v2.y, v1.z - v2.z); //to find the length
-						var v4 = new THREE.Vector3(0, 1, 0); //the axis vector
+						var v4 = new THREE.Vector3(0, 0, 1); //the axis vector
 							
-						placementX = placementArray[other].x;
-						placementY = placementArray[other].y;
-						placementZ = placementArray[other].z;	
+						placementX = placementArray[other].position.x;
+						placementY = placementArray[other].position.y;
+						placementZ = placementArray[other].position.z;	
 						
 						if(v3.length() > maxLimb){
 							maxLimb = v3.length();
 						}
 						//new cylinder object
 						var boneThickness = 1.5;
-						var geom = new THREE.CylinderGeometry(boneThickness, boneThickness, v3.length()-2, 30, 1, false);
-			   			theLimb = new THREE.Mesh( geom, sphereMaterial );
+			   			theLimb = new THREE.Mesh( new THREE.CylinderGeometry( 30, boneThickness, boneThickness, v3.length() -2 , 1, 1), sphereMaterial );
 						
 						//keeps track of where to place the limb.
 						placementX /= 2;
@@ -703,7 +732,7 @@
 						v4.normalize();
 						v3.normalize();
 						var crossVecs = new THREE.Vector3();
-						crossVecs.crossVectors(v4,v3);
+						crossVecs.cross(v4,v3);
 						crossVecs.normalize();
 
 						var dotVecs = Math.acos(v3.dot(v4)/(v3.length()*v4.length()));
@@ -725,10 +754,10 @@
 						theLimb.position.z = placementZ;
 						
 						if(double){
-							theArray[num][placer].add(theLimb);
+							theArray[num][placer].addChild(theLimb);
 						}
 						else{
-							theArray[placer].add(theLimb);
+							theArray[placer].addChild(theLimb);
 							
 						}	
 						limbsArray.push(theLimb);	
@@ -738,7 +767,7 @@
 
 		//Animates one frame forward
 		function animateFrame(){
-					var nonEndJoint = -1;
+
 					
 					
 					for(var joint = 0; joint < theBody.length; joint++)
@@ -750,7 +779,7 @@
 							//if it is an end joint it does not rotate, so we skip it.
 							if(joint == noMovement[theEnd])
 							{
-								endTimes++;
+								//console.log(theJoint.rotation);
 								joint++;
 							}
 						}
@@ -758,18 +787,16 @@
 						if (joint >= theBody.length){
 								break;
 						}
-						nonEndJoint++;
+
 						var theJoint = theBody[joint];
-						if(jointChannels[nonEndJoint] != 6 && jointChannels[nonEndJoint] != 3){
-							alert("This BVH Viewer does not support channel numbers other than 6 or 3.");
-						}
 						//if it is the root it has rotations and positions. we handle this seperately.
 						if(joint == 0)
 						{
+						
 							theJoint.position.x = movement[offset++];
 							theJoint.position.z = -movement[offset++];
 							theJoint.position.y = movement[offset++];
-							
+
 							
 							for(var i = 0; i < 3; i++){
 								if(rotationOrder[i] === "X"){
@@ -787,13 +814,13 @@
 						//if it's not the root it has three rotations like everything else.
 						else
 						{	
-							if (jointChannels[nonEndJoint] == 6){
-								theJoint.position.x = movement[offset++];
-								theJoint.position.z = -movement[offset++];
-								theJoint.position.y = movement[offset++];
-				
+							if (jointChannels[joint] == 6){
+								//theJoint.position.x = movement[offset++];
+								//theJoint.position.z = -movement[offset++];
+								//theJoint.position.y = movement[offset++];
 								
-								//offset+=3;
+								
+								offset+=3;
 							}
 
 							for(var i = 0; i < 3; i++){
@@ -818,7 +845,7 @@
 						//at this frame
 						if(ghostArray[gcount] == null){
 							var geometry = theBody[0].geometry;
-							var ghostMaterial = new THREE.MeshBasicMaterial({color: 0x6666FF, opacity:0.5, transparent:true});
+							var ghostMaterial = new THREE.MeshLambertMaterial({color: 0x6666FF, opacity:0.5});
 							var pos = theBody[0].position;
 							var children = theBody[0].children;
 							var rot = theBody[0].rotation;
@@ -835,7 +862,7 @@
 						//If trace is toggled on, add all ghost bodies to the scene
 						if(traceOn)
 						{	
-							scene.add(ghostArray[gcount][0]);
+							scene.addObject(ghostArray[gcount][0]);
 						}
 						gcount++;
 					}
@@ -869,7 +896,7 @@
 							ghostjoint.position.set(pos.x, pos.y, pos.z);
 							rot = child.rotation;
 							ghostjoint.rotation.set(rot.x,rot.y,rot.z);
-							ghostparent.add(ghostjoint);
+							ghostparent.addChild(ghostjoint);
 							createGhost(children[i], ghostjoint);
 
 						}	
@@ -881,7 +908,6 @@
 		function animateFrameBack(){
 			console.log(this);
 			offset--;
-			var nonEndJoint = jointChannels.length;
 			for(var joint = theBody.length - 1; joint >= 0; joint--)
 					{
 						
@@ -900,7 +926,7 @@
 								break;
 						}
 						var theJoint = theBody[joint];
-						nonEndJoint--;
+						
 						//if it is the root it has rotations and positions. we handle this seperately.
 						if(joint == 0)
 						{
@@ -937,13 +963,12 @@
 								}
 							}
 
-							if (jointChannels[nonEndJoint] == 6){
-								
-								theJoint.position.y = movement[offset--];
-								theJoint.position.z = -movement[offset--];
-								theJoint.position.x = movement[offset--];
-								
-								//offset-=3;
+							if (jointChannels[joint] == 6){
+								//theJoint.position.x = movement[offset++];
+								//theJoint.position.z = -movement[offset++];
+								//theJoint.position.y = movement[offset++];
+
+								offset-=3;
 							}
 
 						}
@@ -960,53 +985,14 @@
 			setTimeout( function() {
 				
 			requestAnimationFrame( animate );
-			controls.update();
+
 			}, 1000/fps);
 			
 			
 			if(!paused){
 				//frame count is found in the file that we read in.
 				if(k < frameCount){
-					//Auto set bounding box in the beginning of the animation
-					if( k == 1){
-						var boundingbox = getBoundingBox(theBody[0]);
-						var xlen = boundingbox.max.x - boundingbox.min.x;
-						var ylen = boundingbox.max.y - boundingbox.min.y;
-						var zlen = boundingbox.max.z - boundingbox.min.z;
-
-						var maxlen = Math.max(xlen,ylen, zlen);
-						if (maxlen == xlen){
-							console.log("X");
-							if(boundingbox.max.x < 0){
-								setUpVector(1,0,0);
-							}
-							else{
-								setUpVector(-1,0,0);
-							}
-							groundplane.rotation.z = 90 * Math.PI / 180;
-						}
-						else if (maxlen == ylen){
-							console.log("Y");
-							if(boundingbox.max.y < 0){
-								setUpVector(0,-1,0);
-							}
-							else{
-								setUpVector(0,1,0);
-							}
-						}
-						else if (maxlen == zlen){
-							console.log("Z");
-							if(boundingbox.max.z > 0){
-								setUpVector(0,0,-1);
-							}
-							else{
-								setUpVector(0,0,1);
-							}
-							groundplane.rotation.x = 90 * Math.PI / 180;
-						}
-						console.log(Math.max(xlen,ylen,zlen));
-						fixCameraView();
-					}
+					
 					animateFrame();
 					k++;
 				
@@ -1026,13 +1012,11 @@
 			    min: new THREE.Vector3(Infinity, Infinity, Infinity),
 			    max: new THREE.Vector3(-Infinity, -Infinity, -Infinity)
 			}
-			for(var i=1; i<theBody.length; i++){
-				var joint = theBody[i].clone();
-
-		        joint.localToWorld(joint.position);
-		        var worldMax = joint.position;
-		        var worldMin = joint.position;
-
+			for(var i=0; i<theBody.length; i++){
+				var joint = theBody[i];
+		    	console.log(joint.__proto__);
+		        var worldMax = joint..localToWorld(joint.position);
+		        var worldMin = joint.__proto__.localToWorld(joint.position);
 
 		        bounds.min.x = Math.min(bounds.min.x, worldMin.x);
 		        bounds.min.y = Math.min(bounds.min.y, worldMin.y);
@@ -1041,26 +1025,9 @@
 		        bounds.max.x = Math.max(bounds.max.x, worldMax.x);
 		        bounds.max.y = Math.max(bounds.max.y, worldMax.y);
 		        bounds.max.z = Math.max(bounds.max.z, worldMax.z);
+			    
 			}
 			return bounds;
-		}
-
-		function fixCameraView(){
-			if(camera.up.x == 1 || camera.up.x == -1){
-				camera.position.x = -100;
-				camera.position.y = 100;
-	 			camera.position.z = -200;
-			}
-			else if(camera.up.z == 1 || camera.up.z == -1){
-				camera.position.z = -100;
-				camera.position.y = 100;
-	 			camera.position.x = -200;
-			}
-			else if(camera.up.y == 1 || camera.up.y == -1){
-				camera.position.z = 100;
-				camera.position.y = 100;
-	 			camera.position.x = -200;
-			}
 		}
 		//render function
 		function render() 

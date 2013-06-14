@@ -16,7 +16,7 @@ To Do:
 - buttons on the side +
 - icons for play/pause +
 - automatically scale bones (keep track of max bone size, if below certain amount scale bones up) +
-
+- Bone scaling doesn't scale ghosts
 
 
 Increase Performance:
@@ -24,4 +24,15 @@ Increase Performance:
 - Trace toggle button could be more efficient --> DONE
 
 
+New To Do:
 
+- Fix weird orientations
+ Fix fast replay issue +
+ 6 channel BVH file issue + 
+ Switch to updated three.js version + 
+ Can play back and forth with 6 channels +
++ Switched to trackballcontrols
++ Switched materials
++ Switched from vertices to vectors
+ opacity of materials +
+ limb orientation + 
