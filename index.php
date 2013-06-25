@@ -42,6 +42,17 @@
 				/*float: left;*/
 				
 			}
+			#block{
+				overflow: hidden;
+				position: absolute;
+				background-color: #282828 ;
+				margin: 0px auto;
+				width:800px;
+				height: 600px; 
+				text-align: center;
+				z-index: 1;
+				/*float: left;*/
+			}
 			#container2{
 				/*position: absolute;*/
 				float: right;
@@ -148,6 +159,14 @@
 	?> 
  		<h1>WebGL BVH Viewer</h1>
  		<div id="wrapper">
+ 			<div id="block">
+ 			  	<div id="bot">
+				        <p> To rotate the camera, hold ALT and click and drag on the canvas. 
+				        	To pan the camera, hold ALT and click and drag using the middle mouse button. 
+				        	To zoom in and out, use the mouse wheel or hold ALT and click and drag using the right mouse button.
+				        </p>
+			   	</div>
+			</div>
 			<div id="container">
 				   	<div id="bot">
 				        <p> To rotate the camera, hold ALT and click and drag on the canvas. 
@@ -874,7 +893,10 @@
 					//removeLimbs(theBody[0]);
 					//drawLimbs(theBody, 1, false);
 					//calls render function	
-					render();	
+					
+					render();
+					
+						
 					//k++;
 
 					//Recursively reates a ghost body that is the copy of
@@ -938,7 +960,7 @@
 						{
 							for(var i = 2; i >= 0; i--){
 								if(rotationOrder[i] === "X"){
-									theJoint.rotation.x = Math.PI/180 * movement[offset--] + Math.PI /180 * -90;
+									theJoint.rotation.x = Math.PI/180 * movement[offset--];
 								}
 								else if(rotationOrder[i] === "Y"){
 									theJoint.rotation.y = Math.PI/180 * movement[offset--] ;
@@ -947,9 +969,8 @@
 									theJoint.rotation.z = Math.PI/180 * movement[offset--];
 								}
 							}
-
+							theJoint.position.z = movement[offset--]*boneScale;
 							theJoint.position.y = movement[offset--]*boneScale;
-							theJoint.position.z = -movement[offset--]*boneScale;
 							theJoint.position.x = movement[offset--]*boneScale;
 							
 						}
@@ -1039,6 +1060,10 @@
 						}
 						console.log(Math.max(xlen,ylen,zlen));
 						fixCameraView();
+
+					}
+					if( k == 2){
+						document.getElementById("block").style.display = "none";
 					}
 					animateFrame();
 					k++;
@@ -1098,7 +1123,7 @@
 		}
 		//render function
 		function render() 
-		{
+		{	
 				renderer.render(scene, camera);
 				stats.update();
 		}
