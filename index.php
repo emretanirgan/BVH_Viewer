@@ -210,7 +210,8 @@
 		<!--<link href="simple-slider.css" rel="stylesheet" type="text/css" />-->
 		<!--<script type="text/javascript" src="parseBVH.js"></script>-->
 		<script type="text/javascript"> 
-			
+			/*If you have any questions about the program,
+			you can email me at tanirganemre at gmail dot com*/
 			
 			//variables
 			var traceOn = true;
@@ -232,6 +233,7 @@
 			var ghostLimbMaterial = new THREE.MeshBasicMaterial({color: 0xCC0000, opacity:0.5, transparent:true});
 			var offset = 0;
 			var tracker = 0;
+			var firstcam = true;
 		
 			var jointChannels = new Array();
 			var jointIndices = new Array();
@@ -254,6 +256,7 @@
 			var maxLimb = -100;
 			var controls;
 			var endTimes = 0;
+			var boneScale = 1;
 
 			//As long as you keep a consistent rotation order in the BVH file, this should work
 			var rotationOrder = new Array();
@@ -536,15 +539,19 @@
 					//since we are only given the positions of the spheres, this method will draw the limbs to connect them.					
 					drawLimbs(theBody, 0, false);	
 					//Automatically scale bones up is max bone length is less than 5.
+				
 					if (maxLimb < 5){
+						boneScale = 25/maxLimb;
 						scaleBones(25/maxLimb, 25/maxLimb, 25/maxLimb);
+
+						console.log(boneScale);
 					}
 						
 	                //Draw the bottom grid
 	                var geometry = new THREE.Geometry();
 	                geometry.vertices.push( new THREE.Vector3( - 500, 0, 0 )  );
 	                geometry.vertices.push( new THREE.Vector3( 500, 0, 0 )  );
-	                material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 0.3 } );
+	                material = new THREE.LineBasicMaterial( { color: 0x666666, opacity: 0.3 } );
 	        		
 	        		groundplane = new THREE.Object3D();
 	                for ( var i = 0; i <= 10; i ++ ) 
@@ -564,6 +571,27 @@
 					
 	        
 	                 }
+	                 /*Draw the axes for debugging purposes
+	                 var xgeom = new THREE.Geometry();
+	                 xgeom.vertices.push( new THREE.Vector3(0,0,0));
+	                 xgeom.vertices.push( new THREE.Vector3(100,0,0));
+	                 xmaterial = new THREE.LineBasicMaterial( { color: 0xff0000, opacity: 0.3 } );
+	                 var xaxis = new THREE.Line( xgeom, xmaterial);
+	                 groundplane.add(xaxis);
+
+	                 var ygeom = new THREE.Geometry();
+	                 ygeom.vertices.push( new THREE.Vector3(0,0,0));
+	                 ygeom.vertices.push( new THREE.Vector3(0,100,0));
+	                 ymaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, opacity: 0.3 } );
+	                 var yaxis = new THREE.Line( ygeom, ymaterial);
+	                 groundplane.add(yaxis);
+
+	                 var zgeom = new THREE.Geometry();
+	                 zgeom.vertices.push( new THREE.Vector3(0,0,0));
+	                 zgeom.vertices.push( new THREE.Vector3(0,0,100));
+	                 zmaterial = new THREE.LineBasicMaterial( { color: 0x0000ff, opacity: 0.3 } );
+	                 var zaxis = new THREE.Line( zgeom, zmaterial);
+	                 groundplane.add(zaxis);*/
 
 	                 scene.add(groundplane);
 					 
@@ -766,14 +794,18 @@
 						//if it is the root it has rotations and positions. we handle this seperately.
 						if(joint == 0)
 						{
-							theJoint.position.x = movement[offset++];
-							theJoint.position.z = -movement[offset++];
-							theJoint.position.y = movement[offset++];
+							console.log(boneScale);
+							theJoint.position.x = movement[offset++]*boneScale;
+
+							theJoint.position.y = movement[offset++]*boneScale;
+							theJoint.position.z = movement[offset++]*boneScale;
+							
+							
 							
 							
 							for(var i = 0; i < 3; i++){
 								if(rotationOrder[i] === "X"){
-									theJoint.rotation.x = Math.PI/180 * movement[offset++] + Math.PI /180 * -90;
+									theJoint.rotation.x = Math.PI/180 * movement[offset++];
 								}
 								else if(rotationOrder[i] === "Y"){
 									theJoint.rotation.y = Math.PI/180 * movement[offset++] ;
@@ -788,12 +820,12 @@
 						else
 						{	
 							if (jointChannels[nonEndJoint] == 6){
-								theJoint.position.x = movement[offset++];
-								theJoint.position.z = -movement[offset++];
-								theJoint.position.y = movement[offset++];
+								//theJoint.position.x = movement[offset++];
+								//theJoint.position.z = -movement[offset++];
+								//theJoint.position.y = movement[offset++];
 				
 								
-								//offset+=3;
+								offset+=3;
 							}
 
 							for(var i = 0; i < 3; i++){
@@ -916,9 +948,9 @@
 								}
 							}
 
-							theJoint.position.y = movement[offset--];
-							theJoint.position.z = -movement[offset--];
-							theJoint.position.x = movement[offset--];
+							theJoint.position.y = movement[offset--]*boneScale;
+							theJoint.position.z = -movement[offset--]*boneScale;
+							theJoint.position.x = movement[offset--]*boneScale;
 							
 						}
 				
@@ -939,11 +971,11 @@
 
 							if (jointChannels[nonEndJoint] == 6){
 								
-								theJoint.position.y = movement[offset--];
-								theJoint.position.z = -movement[offset--];
-								theJoint.position.x = movement[offset--];
+								//theJoint.position.y = movement[offset--];
+								//theJoint.position.z = -movement[offset--];
+								//theJoint.position.x = movement[offset--];
 								
-								//offset-=3;
+								offset-=3;
 							}
 
 						}
@@ -968,7 +1000,8 @@
 				//frame count is found in the file that we read in.
 				if(k < frameCount){
 					//Auto set bounding box in the beginning of the animation
-					if( k == 1){
+					if( k == 1 && firstcam){
+						firstcam = false;
 						var boundingbox = getBoundingBox(theBody[0]);
 						var xlen = boundingbox.max.x - boundingbox.min.x;
 						var ylen = boundingbox.max.y - boundingbox.min.y;
@@ -997,10 +1030,10 @@
 						else if (maxlen == zlen){
 							console.log("Z");
 							if(boundingbox.max.z > 0){
-								setUpVector(0,0,-1);
+								setUpVector(0,0,1);
 							}
 							else{
-								setUpVector(0,0,1);
+								setUpVector(0,0,-1);
 							}
 							groundplane.rotation.x = 90 * Math.PI / 180;
 						}
@@ -1045,6 +1078,7 @@
 			return bounds;
 		}
 
+		//Sets up the camera position depending on the up vector
 		function fixCameraView(){
 			if(camera.up.x == 1 || camera.up.x == -1){
 				camera.position.x = -100;
@@ -1052,14 +1086,14 @@
 	 			camera.position.z = -200;
 			}
 			else if(camera.up.z == 1 || camera.up.z == -1){
-				camera.position.z = -100;
+				camera.position.z = 100;
 				camera.position.y = 100;
 	 			camera.position.x = -200;
 			}
 			else if(camera.up.y == 1 || camera.up.y == -1){
 				camera.position.z = 100;
 				camera.position.y = 100;
-	 			camera.position.x = -200;
+	 			camera.position.x = 300;
 			}
 		}
 		//render function
